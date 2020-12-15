@@ -1,5 +1,5 @@
 [package]
-name = "rsmnl-derive"
+name = "rsmnl-linux-derive"
 version = "0.1.0"
 authors = ["chamas <chamas@h4.dion.ne.jp>"]
 

@@ -6,16 +6,19 @@ use std:: {
 };
 
 extern crate libc;
+
 extern crate rsmnl as mnl;
 use mnl:: {
     MsgVec, Msghdr, AttrTbl, Socket, CbResult, CbStatus,
-    linux:: {
-        netlink as netlink,
-        rtnetlink,
-        if_addr:: {
-            Ifaddrmsg, IfAddrTbl
-        }
-    }
+};
+
+extern crate rsmnl_linux as linux;
+use linux:: {
+    netlink as netlink,
+    rtnetlink,
+    if_addr:: {
+        Ifaddrmsg, IfAddrTbl
+    },
 };
 
 fn data_cb(nlh: &Msghdr) -> CbResult {

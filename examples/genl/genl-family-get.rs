@@ -5,14 +5,18 @@ use std:: {
 };
 
 extern crate libc;
-extern crate rsmnl as mnl;
 
+extern crate rsmnl as mnl;
 use mnl:: {
     AttrTbl, Socket, Msghdr, MsgVec, CbStatus, CbResult,
-    linux::netlink,
-    linux::netlink:: { Family },
-    linux::genetlink as genl,
-    linux::genetlink:: { Genlmsghdr, CtrlAttr, CtrlAttrTbl },
+};
+
+extern crate rsmnl_linux as linux;
+use linux:: {
+    netlink,
+    netlink::Family,
+    genetlink as genl,
+    genetlink:: { Genlmsghdr, CtrlAttr, CtrlAttrTbl },
 };
 
 fn data_cb(nlh: &Msghdr) -> CbResult {

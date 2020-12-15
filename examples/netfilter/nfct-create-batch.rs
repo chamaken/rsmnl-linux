@@ -21,19 +21,20 @@ use mio:: {
 extern crate rsmnl as mnl;
 use mnl:: {
     Msghdr, Socket, MsgVec, CbStatus, CbResult,
-    linux:: {
-        netlink,
-        netfilter:: {
-            nfnetlink as nfnl,
-            nfnetlink:: { Nfgenmsg },
-            nfnetlink_conntrack as nfct,
-            nfnetlink_conntrack:: {
-                CtattrType, CtattrTuple, CtattrIp,
-                CtattrL4proto, CtattrProtoinfo, CtattrProtoinfoTcp,
-            },
-            nf_conntrack_common as nfct_common,
-            nf_conntrack_tcp as nfct_tcp,
+};
+
+extern crate rsmnl_linux as linux;
+use linux:: {
+    netlink,
+    netfilter:: {
+        nfnetlink:: { self as nfnl, Nfgenmsg, },
+        nfnetlink_conntrack:: {
+            self as nfct,
+            CtattrType, CtattrTuple, CtattrIp,
+            CtattrL4proto, CtattrProtoinfo, CtattrProtoinfoTcp,
         },
+        nf_conntrack_common as nfct_common,
+        nf_conntrack_tcp as nfct_tcp,
     },
 };
 

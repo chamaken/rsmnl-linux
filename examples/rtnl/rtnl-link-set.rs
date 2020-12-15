@@ -4,15 +4,15 @@ use std:: {
 };
 
 extern crate rsmnl as mnl;
-use mnl:: {
-    MsgVec, Socket,
-    linux:: {
-        netlink,
-        rtnetlink,
-        rtnetlink:: { Ifinfomsg },
-        if_link::Ifla,
-        ifh
-    }
+use mnl:: { MsgVec, Socket, };
+
+extern crate rsmnl_linux as linux;
+use linux:: {
+    netlink,
+    rtnetlink,
+    rtnetlink::Ifinfomsg,
+    if_link::Ifla,
+    ifh,
 };
 
 fn main() {

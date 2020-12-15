@@ -10,12 +10,14 @@ extern crate libc;
 use libc::{ if_nametoindex };
 
 extern crate rsmnl as mnl;
-use mnl:: {
-    Socket, MsgVec,
-    linux::netlink,
-    linux::netlink:: { Family },
-    linux::rtnetlink,
-    linux::rtnetlink:: { Rtmsg, RtattrType }
+use mnl:: { Socket, MsgVec, };
+
+extern crate rsmnl_linux as linux;
+use linux:: {
+    netlink,
+    netlink::Family,
+    rtnetlink,
+    rtnetlink:: { Rtmsg, RtattrType }
 };
 
 fn main() {

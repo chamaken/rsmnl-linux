@@ -5,22 +5,24 @@ use std:: {
 };
 
 extern crate libc;
-extern crate rsmnl as mnl;
 
+extern crate rsmnl as mnl;
 use mnl:: {
     MsgVec, Msghdr, AttrTbl, Result, Socket, CbStatus, CbResult,
-    linux:: {
-        netlink:: { self, Family },
-        netfilter as nf,
-        netfilter:: {
-            nfnetlink as nfnl,
-            nfnetlink:: { Nfgenmsg, },
-            nfnetlink_queue:: {
-                NfqnlAttrType, NfqnlAttrTypeTbl,
-                NfqnlMsgTypes, NfqnlMsgConfigCmd, NfqnlMsgConfigCmds,
-                NfqnlAttrConfig, NfqnlConfigMode, NfqnlMsgConfigParams,
-                NfqnlMsgVerdictHdr,
-            },
+};
+
+extern crate rsmnl_linux as linux;
+use linux:: {
+    netlink:: { self, Family },
+    netfilter as nf,
+    netfilter:: {
+        nfnetlink as nfnl,
+        nfnetlink:: { Nfgenmsg, },
+        nfnetlink_queue:: {
+            NfqnlAttrType, NfqnlAttrTypeTbl,
+            NfqnlMsgTypes, NfqnlMsgConfigCmd, NfqnlMsgConfigCmds,
+            NfqnlAttrConfig, NfqnlConfigMode, NfqnlMsgConfigParams,
+            NfqnlMsgVerdictHdr,
         },
     },
 };

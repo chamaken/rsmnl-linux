@@ -11,12 +11,14 @@ use libc::AF_PACKET;
 extern crate rsmnl as mnl;
 use mnl:: {
     Msghdr, MsgVec, CbStatus, CbResult, AttrTbl, Socket,
-    linux:: {
-        netlink as netlink,
-        rtnetlink,
-        if_link,
-        ifh
-    }
+};
+
+extern crate rsmnl_linux as linux;
+use linux:: {
+    netlink as netlink,
+    rtnetlink,
+    if_link,
+    ifh,
 };
 
 fn data_cb(nlh: &Msghdr) -> CbResult {

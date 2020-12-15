@@ -8,30 +8,34 @@ use std::{
 };
 
 extern crate libc;
+use libc::{ c_int, c_void, socklen_t };
+
+extern crate errno;
+use errno::Errno;
+
 extern crate mio;
 use mio:: {
     Token, Poll, Interest, Events,
     net::UdpSocket,
 };
-extern crate errno;
-extern crate rsmnl as mnl;
 
-use errno::Errno;
-use libc::{ c_int, c_void, socklen_t };
+extern crate rsmnl as mnl;
 use mnl::{
     Attr, Msghdr, MsgVec, CbStatus, CbResult, AttrTbl, Socket, GenError, Result,
-    linux:: {
-        netlink:: { self, Family },
-        netfilter:: {
-            nfnetlink as nfnl,
-            nfnetlink::Nfgenmsg,
-            nfnetlink_conntrack as nfct,
-            nfnetlink_conntrack:: {
-                CtattrTypeTbl, CtattrType,
-                CtattrCountersTbl, CtattrCounters,
-                CtattrIpTbl,
-                CtattrTupleTbl, CtattrTuple,
-            },
+};
+
+extern crate rsmnl_linux as linux;
+use linux:: {
+    netlink:: { self, Family },
+    netfilter:: {
+        nfnetlink as nfnl,
+        nfnetlink::Nfgenmsg,
+        nfnetlink_conntrack as nfct,
+        nfnetlink_conntrack:: {
+            CtattrTypeTbl, CtattrType,
+            CtattrCountersTbl, CtattrCounters,
+            CtattrIpTbl,
+            CtattrTupleTbl, CtattrTuple,
         },
     },
 };

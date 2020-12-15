@@ -1,12 +1,12 @@
 [package]
-name = "rsmnl"
+name = "rsmnl-linux"
 version = "0.2.1"
 authors = ["Ken-ichirou MATSUZAWA <chamas@h4.dion.ne.jp>"]
-repository = "https://github.com/chamaken/rsmnl"
+repository = "https://github.com/chamaken/rsmnl-linux"
 keywords = ["netlink", "netfilter"]
 license-file = "COPYING"
 readme = "README.md"
-description = "A rust netlink library imitating libmnl"
+description = "linux headers for rsmnl"
 
 [lib]
 crate-type = ["rlib"]
@@ -14,7 +14,8 @@ crate-type = ["rlib"]
 [dependencies]
 libc = "*"
 errno = "*"
-rsmnl-derive = { path = "rsmnl-derive" }
+rsmnl = { path = "../rsmnl-core" }
+rsmnl-linux-derive = { path = "rsmnl-derive" }
 
 [dev-dependencies] # for examples
 mio = "*"

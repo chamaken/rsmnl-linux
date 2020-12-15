@@ -1,10 +1,10 @@
 extern crate libc;
 
 extern crate rsmnl as mnl;
-use mnl:: {
-    Socket,
-    linux::netlink,
-};
+use mnl::Socket;
+
+extern crate rsmnl_linux as linux;
+use linux::netlink;
 
 fn main() {
     let mut nl = Socket::open(netlink::Family::KobjectUevent, 0)

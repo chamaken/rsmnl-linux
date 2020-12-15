@@ -6,11 +6,13 @@ extern crate errno;
 use errno::Errno;
 
 extern crate rsmnl as mnl;
-use mnl:: {
-    Socket, Msghdr, CbStatus, CbResult, AttrTbl,
-    linux::netlink,
-    linux::rtnetlink,
-    linux::rtnetlink:: { Rtmsg, RtattrTypeTbl },
+use mnl:: { Socket, Msghdr, CbStatus, CbResult, AttrTbl, };
+
+extern crate rsmnl_linux as linux;
+use linux:: {
+    netlink,
+    rtnetlink,
+    rtnetlink:: { Rtmsg, RtattrTypeTbl },
 };
 
 fn attributes_show_ip(family: i32, tb: &RtattrTypeTbl) -> Result<(), Errno> {

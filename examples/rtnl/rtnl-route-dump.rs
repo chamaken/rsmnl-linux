@@ -12,10 +12,14 @@ use errno::Errno;
 extern crate rsmnl as mnl;
 use mnl:: {
     Socket, Msghdr, MsgVec, CbStatus, CbResult, AttrTbl,
-    linux::netlink,
-    linux::netlink::Family,
-    linux::rtnetlink,
-    linux::rtnetlink:: { Rtmsg, RtattrTypeTbl },
+};
+
+extern crate rsmnl_linux as linux;
+use linux:: {
+    netlink,
+    netlink::Family,
+    rtnetlink,
+    rtnetlink:: { Rtmsg, RtattrTypeTbl },
 };
 
 fn attributes_show_ip(family: i32, tb: &RtattrTypeTbl) -> Result<(), Errno> {

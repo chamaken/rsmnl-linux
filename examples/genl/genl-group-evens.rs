@@ -1,12 +1,12 @@
 use std::env;
 
 extern crate libc;
-extern crate rsmnl as mnl;
 
-use mnl:: {
-    Socket, Msghdr, CbStatus,
-    linux::netlink:: { Family }
-};
+extern crate rsmnl as mnl;
+use mnl:: { Socket, Msghdr, CbStatus };
+
+extern crate rsmnl_linux as linux;
+use linux::netlink::Family;
 
 fn main() {
     let args: Vec<_> = env::args().collect();

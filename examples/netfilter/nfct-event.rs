@@ -1,19 +1,21 @@
 use std::mem;
 
 extern crate libc;
-extern crate rsmnl as mnl;
 
+extern crate rsmnl as mnl;
 use mnl:: {
     Socket, Msghdr, CbResult, CbStatus, AttrTbl,
-    linux:: {
-        netlink:: { self, Family },
-        netfilter:: {
-            nfnetlink::Nfgenmsg,
-            nfnetlink_conntrack as nfct,
-            nfnetlink_conntrack:: {
-                CtnlMsgTypes,
-                CtattrTypeTbl,
-            },
+};
+
+extern crate rsmnl_linux as linux;
+use linux:: {
+    netlink:: { self, Family },
+    netfilter:: {
+        nfnetlink::Nfgenmsg,
+        nfnetlink_conntrack as nfct,
+        nfnetlink_conntrack:: {
+            CtnlMsgTypes,
+            CtattrTypeTbl,
         },
     },
 };
