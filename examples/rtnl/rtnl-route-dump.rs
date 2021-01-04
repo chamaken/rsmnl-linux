@@ -16,10 +16,8 @@ use mnl:: {
 
 extern crate rsmnl_linux as linux;
 use linux:: {
-    netlink,
-    netlink::Family,
-    rtnetlink,
-    rtnetlink:: { Rtmsg, RtattrTypeTbl },
+    netlink:: { self, Family },
+    rtnetlink:: { self, Rtmsg, RtattrTypeTbl },
 };
 
 fn attributes_show_ip(family: i32, tb: &RtattrTypeTbl) -> Result<(), Errno> {
@@ -160,11 +158,11 @@ fn main() {
     let seq = SystemTime::now().duration_since(UNIX_EPOCH).unwrap().as_secs() as u32;
 
     let mut nlv = MsgVec::new();
-    let mut nlh = nlv.push_header();
+    let mut nlh = nlv.put_header();
     nlh.nlmsg_type = rtnetlink::RTM_GETROUTE;
     nlh.nlmsg_flags = netlink::NLM_F_REQUEST | netlink::NLM_F_DUMP;
     nlh.nlmsg_seq = seq;
-    let rtm = nlv.push_extra_header::<Rtmsg>().unwrap();
+    let rtm = nlv.put_extra_header::<Rtmsg>().unwrap();
     if args[1] == "inet" {
         rtm.rtm_family = libc::AF_INET as u8;
     } else if args[1] == "inet6" {

@@ -224,7 +224,7 @@ fn parse_type_attr(ei: &Ident, vi: &Ident, attr: &Attribute) -> Result<Option<(T
 
     let args = attr.parse_args::<Signature>()?;
     let name = args.name;
-    let pushfn = Ident::new(&format!("push_{}", name), Span::call_site());
+    let putfn = Ident::new(&format!("put_{}", name), Span::call_site());
     let tid = args.rtype;
     match tid {
         SigType::Str => Ok(Some((
@@ -238,8 +238,8 @@ fn parse_type_attr(ei: &Ident, vi: &Ident, attr: &Attribute) -> Result<Option<(T
                 }
             },
             quote! {
-                pub fn #pushfn<'a>(nlv: &'a mut MsgVec, data: &str) -> Result<&'a mut MsgVec> {
-                    nlv.push_str(#ei::#vi, data)
+                pub fn #putfn<'a>(nlv: &'a mut MsgVec, data: &str) -> Result<&'a mut MsgVec> {
+                    nlv.put_str(#ei::#vi, data)
                 }
             }
         ))),
@@ -254,8 +254,8 @@ fn parse_type_attr(ei: &Ident, vi: &Ident, attr: &Attribute) -> Result<Option<(T
                 }
             },
             quote! {
-                pub fn #pushfn<'a>(nlv: &'a mut MsgVec, data: &str) -> Result<&'a mut MsgVec> {
-                    nlv.push_strz(#ei::#vi, data)
+                pub fn #putfn<'a>(nlv: &'a mut MsgVec, data: &str) -> Result<&'a mut MsgVec> {
+                    nlv.put_strz(#ei::#vi, data)
                 }
             }
         ))),
@@ -270,8 +270,8 @@ fn parse_type_attr(ei: &Ident, vi: &Ident, attr: &Attribute) -> Result<Option<(T
                 }
             },
             quote! {
-                pub fn #pushfn<'a>(nlv: &'a mut MsgVec, data: &[u8]) -> Result<&'a mut MsgVec> {
-                    nlv.push_bytes(#ei::#vi, data)
+                pub fn #putfn<'a>(nlv: &'a mut MsgVec, data: &[u8]) -> Result<&'a mut MsgVec> {
+                    nlv.put_bytes(#ei::#vi, data)
                 }
             }
         ))),
@@ -287,8 +287,8 @@ fn parse_type_attr(ei: &Ident, vi: &Ident, attr: &Attribute) -> Result<Option<(T
                 }
             },
             quote! {
-                pub fn #pushfn<'a>(nlv: &'a mut MsgVec, data: &#tid) -> Result<&'a mut MsgVec> {
-                    nlv.push(#ei::#vi, data)
+                pub fn #putfn<'a>(nlv: &'a mut MsgVec, data: &#tid) -> Result<&'a mut MsgVec> {
+                    nlv.put(#ei::#vi, data)
                 }
             }
         ))),

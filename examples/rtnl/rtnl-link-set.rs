@@ -8,9 +8,8 @@ use mnl:: { MsgVec, Socket, };
 
 extern crate rsmnl_linux as linux;
 use linux:: {
-    netlink,
-    rtnetlink,
-    rtnetlink::Ifinfomsg,
+    netlink:: { self, Family },
+    rtnetlink:: { self, Ifinfomsg },
     if_link::Ifla,
     ifh,
 };
@@ -35,7 +34,7 @@ fn main() {
         _ => panic!("{} is not neither `up' nor `down'", args[2]),
     }
 
-    let mut nl = Socket::open(netlink::Family::Route, 0)
+    let mut nl = Socket::open(Family::Route, 0)
         .unwrap_or_else(|errno| panic!("mnl_socket_open: {}", errno));
     nl.bind(0, mnl::SOCKET_AUTOPID)
         .unwrap_or_else(|errno| panic!("mnl_socket_bind: {}", errno));
@@ -44,16 +43,16 @@ fn main() {
     let seq = SystemTime::now().duration_since(UNIX_EPOCH).unwrap().as_secs() as u32;
 
     let mut nlv = MsgVec::new();
-    let mut nlh = nlv.push_header();
+    let mut nlh = nlv.put_header();
     nlh.nlmsg_type = rtnetlink::RTM_NEWLINK;
     nlh.nlmsg_flags = netlink::NLM_F_REQUEST | netlink::NLM_F_ACK;
     nlh.nlmsg_seq = seq;
-    let ifm: &mut Ifinfomsg = nlv.push_extra_header().unwrap();
+    let ifm: &mut Ifinfomsg = nlv.put_extra_header().unwrap();
     ifm.ifi_family = 0; // no libc::AF_UNSPEC;
     ifm.ifi_change = change;
     ifm.ifi_flags = flags;
 
-    nlv.push_str(Ifla::Ifname, &args[1]).unwrap();
+    nlv.put_str(Ifla::Ifname, &args[1]).unwrap();
     // Ifla::put_ifname(&mut nlh, &args[1]).unwrap();
 
     nl.sendto(&nlv)

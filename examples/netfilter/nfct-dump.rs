@@ -71,11 +71,11 @@ fn main() {
 
     let seq = SystemTime::now().duration_since(UNIX_EPOCH).unwrap().as_secs() as u32;
     let mut nlv = MsgVec::new();
-    let mut nlh = nlv.push_header();
+    let mut nlh = nlv.put_header();
     nlh.nlmsg_type = (nfnl::NFNL_SUBSYS_CTNETLINK << 8) | CtnlMsgTypes::Get as u16;
     nlh.nlmsg_flags = netlink::NLM_F_REQUEST | netlink::NLM_F_DUMP;
     nlh.nlmsg_seq = seq;
-    let nfh = nlv.push_extra_header::<Nfgenmsg>().unwrap();
+    let nfh = nlv.put_extra_header::<Nfgenmsg>().unwrap();
     nfh.nfgen_family = libc::AF_INET as u8;
     nfh.version = nfnl::NFNETLINK_V0;
     nfh.res_id = 0;

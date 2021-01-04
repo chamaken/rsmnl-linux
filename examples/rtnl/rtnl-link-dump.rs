@@ -15,14 +15,14 @@ use mnl:: {
 
 extern crate rsmnl_linux as linux;
 use linux:: {
-    netlink as netlink,
-    rtnetlink,
-    if_link,
+    netlink:: {self, Family },
+    rtnetlink:: { self, Ifinfomsg, Rtgenmsg },
+    if_link::IflaTbl,
     ifh,
 };
 
 fn data_cb(nlh: &Msghdr) -> CbResult {
-    let ifm = nlh.payload::<rtnetlink::Ifinfomsg>().unwrap();
+    let ifm = nlh.payload::<Ifinfomsg>().unwrap();
     print!("index={} type={} flags=0x{:x} family={} ",
            ifm.ifi_index, ifm.ifi_type, ifm.ifi_flags, ifm.ifi_family);
 
@@ -32,8 +32,8 @@ fn data_cb(nlh: &Msghdr) -> CbResult {
         print!("[NOT RUNNING] ");
     }
 
-    let tb = if_link::IflaTbl::from_nlmsg(
-        mem::size_of::<rtnetlink::Ifinfomsg>(), nlh
+    let tb = IflaTbl::from_nlmsg(
+        mem::size_of::<Ifinfomsg>(), nlh
     )?;
     tb.mtu()?.map(|x| print!("mtu={} ", x));
     tb.ifname()?.map(|x| print!("name={} ", x));
@@ -49,7 +49,7 @@ fn data_cb(nlh: &Msghdr) -> CbResult {
 }
 
 fn main() {
-    let mut nl = Socket::open(netlink::Family::Route, 0)
+    let mut nl = Socket::open(Family::Route, 0)
         .unwrap_or_else(|errno| panic!("mnl_socket_open: {}", errno));
     nl.bind(0, mnl::SOCKET_AUTOPID)
         .unwrap_or_else(|errno| panic!("mnl_socket_bind: {}", errno));
@@ -58,11 +58,11 @@ fn main() {
     let seq = SystemTime::now().duration_since(UNIX_EPOCH).unwrap().as_secs() as u32;
 
     let mut nlv = MsgVec::new();
-    let mut nlh = nlv.push_header();
+    let mut nlh = nlv.put_header();
     nlh.nlmsg_type = rtnetlink::RTM_GETLINK;
     nlh.nlmsg_flags = netlink::NLM_F_REQUEST | netlink::NLM_F_DUMP;
     nlh.nlmsg_seq = seq;
-    let rt: &mut rtnetlink::Rtgenmsg = nlv.push_extra_header().unwrap();
+    let rt: &mut Rtgenmsg = nlv.put_extra_header().unwrap();
     rt.rtgen_family = AF_PACKET as u8;
     nl.sendto(&nlv)
         .unwrap_or_else(|errno| panic!("mnl_socket_sendto: {}", errno));

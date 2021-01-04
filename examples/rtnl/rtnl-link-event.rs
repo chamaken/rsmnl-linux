@@ -7,14 +7,14 @@ use mnl:: {
 
 extern crate rsmnl_linux as linux;
 use linux:: {
-    netlink as netlink,
-    rtnetlink,
-    if_link,
+    netlink::Family,
+    rtnetlink:: { self, Ifinfomsg },
+    if_link::IflaTbl,
     ifh,
 };
 
 fn data_cb(nlh: &Msghdr) -> CbResult {
-    let ifm: &rtnetlink::Ifinfomsg = nlh.payload()?;
+    let ifm: &Ifinfomsg = nlh.payload()?;
     print!("index={} type={} flags=0x{:x} family={} ",
            ifm.ifi_index, ifm.ifi_type, ifm.ifi_flags, ifm.ifi_family);
 
@@ -24,8 +24,8 @@ fn data_cb(nlh: &Msghdr) -> CbResult {
         print!("[NOT RUNNING] ");
     }
 
-    let tb = if_link::IflaTbl::from_nlmsg(
-        mem::size_of::<rtnetlink::Ifinfomsg>(), nlh
+    let tb = IflaTbl::from_nlmsg(
+        mem::size_of::<Ifinfomsg>(), nlh
     )?;
     tb.mtu()?.map(|x| print!("mtu={} ", x));
     tb.ifname()?.map(|x| print!("name={} ", x));
@@ -35,7 +35,7 @@ fn data_cb(nlh: &Msghdr) -> CbResult {
 }
 
 fn main() {
-    let mut nl = Socket::open(netlink::Family::Route, 0)
+    let mut nl = Socket::open(Family::Route, 0)
         .unwrap_or_else(|errno| panic!("mnl_socket_open: {}", errno));
     nl.bind(rtnetlink::RTMGRP_LINK, mnl::SOCKET_AUTOPID)
         .unwrap_or_else(|errno| panic!("mnl_socket_bind: {}", errno));

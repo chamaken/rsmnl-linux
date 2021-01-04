@@ -41,11 +41,11 @@ fn queue_cb(packet_id: &mut u32) -> impl FnMut(&Msghdr) -> CbResult + '_
 }
 
 fn nfq_build_cfg_pf_request(nlv: &mut MsgVec, command: u8) -> Result<()> {
-    let mut nlh = nlv.push_header();
+    let mut nlh = nlv.put_header();
     nlh.nlmsg_type = (nfnl::NFNL_SUBSYS_QUEUE << 8) | NfqnlMsgTypes::Config as u16;
     nlh.nlmsg_flags = netlink::NLM_F_REQUEST;
 
-    let nfg = nlv.push_extra_header::<Nfgenmsg>()?;
+    let nfg = nlv.put_extra_header::<Nfgenmsg>()?;
     nfg.nfgen_family = 0; // libc::AF_UNSPEC as u8;
     nfg.version = nfnl::NFNETLINK_V0;
 
@@ -54,17 +54,17 @@ fn nfq_build_cfg_pf_request(nlv: &mut MsgVec, command: u8) -> Result<()> {
         pf: libc::AF_INET.to_be() as u16,
         ..Default::default()
     };
-    nlv.push(NfqnlAttrConfig::Cmd, &cmd)?;
+    nlv.put(NfqnlAttrConfig::Cmd, &cmd)?;
 
     Ok(())
 }
 
 fn nfq_build_cfg_request(nlv: &mut MsgVec, command: u8, queue_num: u16) -> Result<()> {
-    let mut nlh = nlv.push_header();
+    let mut nlh = nlv.put_header();
     nlh.nlmsg_type = (nfnl::NFNL_SUBSYS_QUEUE << 8) | NfqnlMsgTypes::Config as u16;
     nlh.nlmsg_flags = netlink::NLM_F_REQUEST;
 
-    let nfg = nlv.push_extra_header::<nfnl::Nfgenmsg>()?;
+    let nfg = nlv.put_extra_header::<nfnl::Nfgenmsg>()?;
     nfg.nfgen_family = 0; // libc::AF_UNSPEC as u8;
     nfg.version = nfnl::NFNETLINK_V0;
     nfg.res_id = queue_num.to_be();
@@ -74,38 +74,38 @@ fn nfq_build_cfg_request(nlv: &mut MsgVec, command: u8, queue_num: u16) -> Resul
         pf: libc::AF_INET.to_be() as u16,
         ..Default::default()
     };
-    nlv.push(NfqnlAttrConfig::Cmd, &cmd)?;
+    nlv.put(NfqnlAttrConfig::Cmd, &cmd)?;
 
     Ok(())
 }
 
 fn nfq_build_cfg_params(nlv: &mut MsgVec, mode: u8, range: u32, queue_num: u16) -> Result<()> {
-    let mut nlh = nlv.push_header();
+    let mut nlh = nlv.put_header();
     nlh.nlmsg_type = (nfnl::NFNL_SUBSYS_QUEUE << 8) | NfqnlMsgTypes::Config as u16;
     nlh.nlmsg_flags = netlink::NLM_F_REQUEST;
 
-    let nfg = nlv.push_extra_header::<Nfgenmsg>()?;
+    let nfg = nlv.put_extra_header::<Nfgenmsg>()?;
     nfg.nfgen_family = 0; // libc::AF_UNSPEC as u8;
     nfg.version = nfnl::NFNETLINK_V0;
     nfg.res_id = queue_num.to_be();
 
     let params = NfqnlMsgConfigParams { copy_range: range.to_be(), copy_mode: mode };
-    nlv.push(NfqnlAttrConfig::Params, &params)?;
+    nlv.put(NfqnlAttrConfig::Params, &params)?;
 
     Ok(())
 }
 
 fn nfq_build_verdict(nlv: &mut MsgVec, id: u32, queue_num: u16, verd: u32) -> Result<()> {
-    let mut nlh = nlv.push_header();
+    let mut nlh = nlv.put_header();
     nlh.nlmsg_type = (nfnl::NFNL_SUBSYS_QUEUE << 8) | NfqnlMsgTypes::Verdict as u16;
     nlh.nlmsg_flags = netlink::NLM_F_REQUEST;
-    let nfg = nlv.push_extra_header::<Nfgenmsg>()?;
+    let nfg = nlv.put_extra_header::<Nfgenmsg>()?;
     nfg.nfgen_family = 0; // libc::AF_UNSPEC as u8;
     nfg.version = nfnl::NFNETLINK_V0;
     nfg.res_id = queue_num.to_be();
 
     let vh = NfqnlMsgVerdictHdr { verdict: verd.to_be(), id: id.to_be() };
-    nlv.push(NfqnlAttrType::VerdictHdr, &vh)?;
+    nlv.put(NfqnlAttrType::VerdictHdr, &vh)?;
 
     Ok(())
 }

@@ -10,9 +10,8 @@ use mnl:: { Socket, Msghdr, CbStatus, CbResult, AttrTbl, };
 
 extern crate rsmnl_linux as linux;
 use linux:: {
-    netlink,
-    rtnetlink,
-    rtnetlink:: { Rtmsg, RtattrTypeTbl },
+    netlink::Family,
+    rtnetlink:: { self, Rtmsg, RtattrTypeTbl },
 };
 
 fn attributes_show_ip(family: i32, tb: &RtattrTypeTbl) -> Result<(), Errno> {
@@ -145,7 +144,7 @@ fn data_cb(nlh: &Msghdr) -> CbResult {
 }
 
 fn main() {
-    let mut nl = Socket::open(netlink::Family::Route, 0)
+    let mut nl = Socket::open(Family::Route, 0)
         .unwrap_or_else(|errno| panic!("mnl_socket_open: {}", errno));
     nl.bind(rtnetlink::RTMGRP_IPV4_ROUTE | rtnetlink::RTMGRP_IPV6_ROUTE,
             mnl::SOCKET_AUTOPID)

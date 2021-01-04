@@ -14,10 +14,8 @@ use mnl:: { Socket, MsgVec, };
 
 extern crate rsmnl_linux as linux;
 use linux:: {
-    netlink,
-    netlink::Family,
-    rtnetlink,
-    rtnetlink:: { Rtmsg, RtattrType }
+    netlink:: { self, Family },
+    rtnetlink:: { self, Rtmsg, RtattrType }
 };
 
 fn main() {
@@ -54,12 +52,12 @@ Example: {} eth0 10.0.1.12 32 10.0.1.11
     let seq = SystemTime::now().duration_since(UNIX_EPOCH).unwrap().as_secs() as u32;
 
     let mut nlv = MsgVec::new();
-    let mut nlh = nlv.push_header();
+    let mut nlh = nlv.put_header();
     nlh.nlmsg_type = rtnetlink::RTM_NEWROUTE;
     nlh.nlmsg_flags = netlink::NLM_F_REQUEST | netlink::NLM_F_CREATE | netlink::NLM_F_ACK;
     nlh.nlmsg_seq = seq;
 
-    let rtm = nlv.push_extra_header::<Rtmsg>().unwrap();
+    let rtm = nlv.put_extra_header::<Rtmsg>().unwrap();
     rtm.rtm_family = match dst {
         IpAddr::V4(_) => libc::AF_INET as u8,
         IpAddr::V6(_) => libc::AF_INET6 as u8,
@@ -80,18 +78,18 @@ Example: {} eth0 10.0.1.12 32 10.0.1.11
 
     match dst {
         IpAddr::V4(addr) =>
-            // nlv.push(RtattrType::Dst, &addr.octets()).unwrap(),
-            RtattrType::push_v4dst(&mut nlv, &addr).unwrap(),
+            // nlv.put(RtattrType::Dst, &addr.octets()).unwrap(),
+            RtattrType::put_v4dst(&mut nlv, &addr).unwrap(),
         IpAddr::V6(addr) =>
-            // nlv.push(RtattrType::Dst, &addr.segments()).unwrap(),
-            RtattrType::push_v6dst(&mut nlv, &addr).unwrap(),
+            // nlv.put(RtattrType::Dst, &addr.segments()).unwrap(),
+            RtattrType::put_v6dst(&mut nlv, &addr).unwrap(),
     };
-    nlv.push(RtattrType::Oif, &iface).unwrap();
+    nlv.put(RtattrType::Oif, &iface).unwrap();
     gw.map(|nh| match nh {
         IpAddr::V4(addr) =>
-            RtattrType::push_v4gateway(&mut nlv, &addr).unwrap(),
+            RtattrType::put_v4gateway(&mut nlv, &addr).unwrap(),
         IpAddr::V6(addr) =>
-            RtattrType::push_v6gateway(&mut nlv, &addr).unwrap(),
+            RtattrType::put_v6gateway(&mut nlv, &addr).unwrap(),
     });
     nl.sendto(&nlv)
         .unwrap_or_else(|errno| panic!("mnl_socket_sendto: {}", errno));

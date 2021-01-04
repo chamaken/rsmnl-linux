@@ -14,11 +14,9 @@ use mnl:: {
 
 extern crate rsmnl_linux as linux;
 use linux:: {
-    netlink as netlink,
-    rtnetlink,
-    if_addr:: {
-        Ifaddrmsg, IfAddrTbl
-    },
+    netlink:: { self, Family },
+    rtnetlink:: { self, Rtgenmsg },
+    if_addr:: { Ifaddrmsg, IfAddrTbl },
 };
 
 fn data_cb(nlh: &Msghdr) -> CbResult {
@@ -53,7 +51,7 @@ fn main() {
         panic!("Usage: {} <inet|inet6>", args[0]);
     }
 
-    let mut nl = Socket::open(netlink::Family::Route, 0)
+    let mut nl = Socket::open(Family::Route, 0)
         .unwrap_or_else(|errno| panic!("mnl_socket_open: {}", errno));
     nl.bind(0, mnl::SOCKET_AUTOPID)
         .unwrap_or_else(|errno| panic!("mnl_socket_bind: {}", errno));
@@ -62,12 +60,12 @@ fn main() {
     let seq = SystemTime::now().duration_since(UNIX_EPOCH).unwrap().as_secs() as u32;
 
     let mut nlv = MsgVec::new();
-    let mut nlh = nlv.push_header();
+    let mut nlh = nlv.put_header();
     nlh.nlmsg_type = rtnetlink::RTM_GETADDR;
     nlh.nlmsg_flags = netlink::NLM_F_REQUEST | netlink::NLM_F_DUMP;
     nlh.nlmsg_seq = seq;
 
-    let rt = nlv.push_extra_header::<rtnetlink::Rtgenmsg>().unwrap();
+    let rt = nlv.put_extra_header::<Rtgenmsg>().unwrap();
     if args[1] == "inet" {
         rt.rtgen_family = libc::AF_INET as u8;
     } else if args[1] == "inet6" {

@@ -39,52 +39,52 @@ use linux:: {
 };
 
 fn put_msg(nlv: &mut MsgVec, i: u16, seq: u32) -> Result<(), Errno> {
-    let nlh = nlv.push_header();
+    let nlh = nlv.put_header();
     nlh.nlmsg_type = (nfnl::NFNL_SUBSYS_CTNETLINK << 8) | nfct::IPCTNL_MSG_CT_NEW;
     nlh.nlmsg_flags =
         netlink::NLM_F_REQUEST | netlink::NLM_F_CREATE
         | netlink::NLM_F_EXCL | netlink::NLM_F_ACK;
     nlh.nlmsg_seq = seq;
 
-    let nfh = nlv.push_extra_header::<Nfgenmsg>()?;
+    let nfh = nlv.put_extra_header::<Nfgenmsg>()?;
     nfh.nfgen_family = libc::AF_INET as u8;
     nfh.version = nfnl::NFNETLINK_V0;
     nfh.res_id = 0;
 
     nlv.nest_start(CtattrType::TupleOrig)?;
     nlv.nest_start(CtattrTuple::Ip)?;
-    nlv.push(CtattrIp::V4Src, &Ipv4Addr::new(1, 1, 1, 1))?;
-    nlv.push(CtattrIp::V4Dst, &Ipv4Addr::new(2, 2, 2, 2))?;
+    nlv.put(CtattrIp::V4Src, &Ipv4Addr::new(1, 1, 1, 1))?;
+    nlv.put(CtattrIp::V4Dst, &Ipv4Addr::new(2, 2, 2, 2))?;
     nlv.nest_end()?;
 
     nlv.nest_start(CtattrTuple::Proto)?;
-    nlv.push(CtattrL4proto::Num, &(libc::IPPROTO_TCP as u8))?;
-    nlv.push(CtattrL4proto::SrcPort, &u16::to_be(i))?;
-    nlv.push(CtattrL4proto::DstPort, &u16::to_be(1025))?;
+    nlv.put(CtattrL4proto::Num, &(libc::IPPROTO_TCP as u8))?;
+    nlv.put(CtattrL4proto::SrcPort, &u16::to_be(i))?;
+    nlv.put(CtattrL4proto::DstPort, &u16::to_be(1025))?;
     nlv.nest_end()?;
     nlv.nest_end()?;
 
     nlv.nest_start(CtattrType::TupleReply)?;
     nlv.nest_start(CtattrTuple::Ip)?;
-    nlv.push(CtattrIp::V4Src, &Ipv4Addr::new(2, 2, 2, 2))?;
-    nlv.push(CtattrIp::V4Dst, &Ipv4Addr::new(1, 1, 1, 1))?;
+    nlv.put(CtattrIp::V4Src, &Ipv4Addr::new(2, 2, 2, 2))?;
+    nlv.put(CtattrIp::V4Dst, &Ipv4Addr::new(1, 1, 1, 1))?;
     nlv.nest_end()?;
 
     nlv.nest_start(CtattrTuple::Proto)?;
-    nlv.push(CtattrL4proto::Num, &(libc::IPPROTO_TCP as u8))?;
-    nlv.push(CtattrL4proto::SrcPort, &u16::to_be(1025))?;
-    nlv.push(CtattrL4proto::DstPort, &u16::to_be(i))?;
+    nlv.put(CtattrL4proto::Num, &(libc::IPPROTO_TCP as u8))?;
+    nlv.put(CtattrL4proto::SrcPort, &u16::to_be(1025))?;
+    nlv.put(CtattrL4proto::DstPort, &u16::to_be(i))?;
     nlv.nest_end()?;
     nlv.nest_end()?;
 
     nlv.nest_start(CtattrType::Protoinfo)?;
     nlv.nest_start(CtattrProtoinfo::Tcp)?;
-    nlv.push(CtattrProtoinfoTcp::State, &nfct_tcp::TCP_CONNTRACK_SYN_SENT)?;
+    nlv.put(CtattrProtoinfoTcp::State, &nfct_tcp::TCP_CONNTRACK_SYN_SENT)?;
     nlv.nest_end()?;
     nlv.nest_end()?;
 
-    nlv.push(CtattrType::Status, &u32::to_be(nfct_common::IPS_CONFIRMED))?;
-    nlv.push(CtattrType::Timeout, &u32::to_be(1000))?;
+    nlv.put(CtattrType::Status, &u32::to_be(nfct_common::IPS_CONFIRMED))?;
+    nlv.put(CtattrType::Timeout, &u32::to_be(1000))?;
 
     Ok(())
 }

@@ -44,43 +44,43 @@ fn log_cb(nlh: &Msghdr) -> CbResult {
 }
 
 fn nflog_build_cfg_pf_request(nlv: &mut MsgVec, command: u8) -> Result<()> {
-    let mut nlh = nlv.push_header();
+    let mut nlh = nlv.put_header();
     nlh.nlmsg_type = (nfnl::NFNL_SUBSYS_ULOG << 8) | NfulnlMsgTypes::Config as u16;
     nlh.nlmsg_flags = netlink::NLM_F_REQUEST;
 
-    let nfg = nlv.push_extra_header::<Nfgenmsg>()?;
+    let nfg = nlv.put_extra_header::<Nfgenmsg>()?;
     nfg.nfgen_family = libc::AF_INET as u8;
     nfg.version = nfnl::NFNETLINK_V0;
 
     let cmd = NfulnlMsgConfigCmd { command: command };
-    // nlv.push(NfulnlAttrConfig::Cmd, &cmd)?;
-    NfulnlAttrConfig::push_cmd(nlv, &cmd)?;
+    // nlv.put(NfulnlAttrConfig::Cmd, &cmd)?;
+    NfulnlAttrConfig::put_cmd(nlv, &cmd)?;
 
     Ok(())
 }
 
 fn nflog_build_cfg_request(nlv: &mut MsgVec, command: u8, qnum: u16) -> Result<()> {
-    let mut nlh = nlv.push_header();
+    let mut nlh = nlv.put_header();
     nlh.nlmsg_type = (nfnl::NFNL_SUBSYS_ULOG << 8) | NfulnlMsgTypes::Config as u16;
     nlh.nlmsg_flags = netlink::NLM_F_REQUEST;
 
-    let nfg = nlv.push_extra_header::<Nfgenmsg>()?;
+    let nfg = nlv.put_extra_header::<Nfgenmsg>()?;
     nfg.nfgen_family = libc::AF_INET as u8;
     nfg.version = nfnl::NFNETLINK_V0;
     nfg.res_id = qnum.to_be();
 
     let cmd = nful::NfulnlMsgConfigCmd { command: command };
-    nlv.push(NfulnlAttrConfig::Cmd, &cmd)?;
+    nlv.put(NfulnlAttrConfig::Cmd, &cmd)?;
 
     Ok(())
 }
 
 fn nflog_build_cfg_params(nlv: &mut MsgVec, mode: u8, range: u32, qnum: u16) -> Result<()> {
-    let mut nlh = nlv.push_header();
+    let mut nlh = nlv.put_header();
     nlh.nlmsg_type = (nfnl::NFNL_SUBSYS_ULOG << 8) | NfulnlMsgTypes::Config as u16;
     nlh.nlmsg_flags = netlink::NLM_F_REQUEST;
 
-    let nfg = nlv.push_extra_header::<Nfgenmsg>()?;
+    let nfg = nlv.put_extra_header::<Nfgenmsg>()?;
     nfg.nfgen_family = 0; // libc::AF_UNSPEC as u8;
     nfg.version = nfnl::NFNETLINK_V0;
     nfg.res_id = qnum.to_be();
@@ -90,7 +90,7 @@ fn nflog_build_cfg_params(nlv: &mut MsgVec, mode: u8, range: u32, qnum: u16) -> 
         copy_mode: mode,
         _pad: 0,
     };
-    nlv.push(NfulnlAttrConfig::Mode, &params)?;
+    nlv.put(NfulnlAttrConfig::Mode, &params)?;
 
     Ok(())
 }
