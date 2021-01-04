@@ -129,21 +129,28 @@ fn data_cb(hmap: &mut HashMap<IpAddr, Box<Nstats>>)
 
 fn handle(nl: &mut Socket, hmap: &mut HashMap<IpAddr, Box<Nstats>>) -> CbResult {
     let mut buf = mnl::dump_buffer();
-    match nl.recvfrom(&mut buf) {
-        Ok(nrecv) =>
-            return mnl::cb_run(&buf[0..nrecv], 0, 0, Some(data_cb(hmap))),
-
-        Err(errno) => {
-            if errno.0 == libc::ENOBUFS {
-                println!("The daemon has hit ENOBUFS, you can \
-			  increase the size of your receiver \
-			  buffer to mitigate this or enable \
-			  reliable delivery.");
-            } else {
-                println!("mnl_socket_recvfrom: {}", errno);
-            }
-            return mnl::gen_errno!(errno.0);
-        },
+    loop {
+        match nl.recvfrom(&mut buf) {
+            Ok(nrecv) =>
+                match mnl::cb_run(&buf[0..nrecv], 0, 0, Some(data_cb(hmap))) {
+                    Ok(CbStatus::Ok) => continue,
+                    ret @ _ => return ret,
+                },
+            Err(errno) => {
+                if errno.0 == libc::EAGAIN {
+                    return Ok(CbStatus::Ok)
+                }
+                if errno.0 == libc::ENOBUFS {
+                    println!("The daemon has hit ENOBUFS, you can \
+			      increase the size of your receiver \
+			      buffer to mitigate this or enable \
+			      reliable delivery.");
+                } else {
+                    println!("mnl_socket_recvfrom: {}", errno);
+                }
+                return mnl::gen_errno!(errno.0);
+            },
+        }
     }
 }
 
@@ -166,6 +173,7 @@ fn main() {
 
     let mut nl = Socket::open(Family::Netfilter, 0)
         .unwrap_or_else(|errno| panic!("mnl_socket_open: {}", errno));
+    nl.set_nonblock().unwrap();
     nl.bind(nfct::NF_NETLINK_CONNTRACK_DESTROY, mnl::SOCKET_AUTOPID)
         .unwrap_or_else(|errno| panic!("mnl_socket_bind: {}", errno));
     unsafe {
