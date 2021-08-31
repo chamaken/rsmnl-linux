@@ -8,6 +8,8 @@ license-file = "COPYING"
 readme = "README.md"
 description = "linux headers for rsmnl"
 
+autoexamples = false
+
 [lib]
 crate-type = ["rlib"]
 
@@ -19,7 +21,66 @@ rsmnl-linux-derive = { path = "rsmnl-derive" }
 
 [dev-dependencies] # for examples
 mio = "*"
-pnet = "*"
 
 [dependencies.mio]
 features = ["os-poll", "os-util", "udp"]
+
+[[example]]
+name = "genl-family-get"
+path = "examples/genl/genl-family-get.rs"
+
+[[example]]
+name = "rtnl-addr-dump"
+path = "examples/rtnl/rtnl-addr-dump.rs"
+
+[[example]]
+name = "rtnl-link-dump"
+path = "examples/rtnl/rtnl-link-dump.rs"
+
+[[example]]
+name = "rtnl-link-event"
+path = "examples/rtnl/rtnl-link-event.rs"
+
+[[example]]
+name = "rtnl-link-set"
+path = "examples/rtnl/rtnl-link-set.rs"
+
+[[example]]
+name = "rtnl-neigh-dump"
+path = "examples/rtnl/rtnl-neigh-dump.rs"
+
+[[example]]
+name = "rtnl-route-add"
+path = "examples/rtnl/rtnl-route-add.rs"
+
+[[example]]
+name = "rtnl-route-dump"
+path = "examples/rtnl/rtnl-route-dump.rs"
+
+[[example]]
+name = "rtnl-route-event"
+path = "examples/rtnl/rtnl-route-event.rs"
+
+[[example]]
+name = "nf-log"
+path = "examples/netfilter/nf-log.rs"
+
+[[example]]
+name = "nf-queue"
+path = "examples/netfilter/nf-queue.rs"
+
+[[example]]
+name = "nfct-create-batch"
+path = "examples/netfilter/nfct-create-batch.rs"
+
+[[example]]
+name = "nfct-daemon"
+path = "examples/netfilter/nfct-daemon.rs"
+
+[[example]]
+name = "nfct-dump"
+path = "examples/netfilter/nfct-dump.rs"
+
+[[example]]
+name = "nfct-event"
+path = "examples/netfilter/nfct-event.rs"

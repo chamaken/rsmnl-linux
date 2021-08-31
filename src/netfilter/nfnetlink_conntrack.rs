@@ -1,11 +1,13 @@
 use errno::Errno;
-use std::net::{ Ipv4Addr, Ipv6Addr };
-use mnl:: { MsgVec, Attr, AttrTbl, Result };
+use mnl::{Attr, AttrTbl, MsgVec, Result};
+use netfilter::nf_conntrack_tcp::NfCtTcpFlags;
+use std::net::{Ipv4Addr, Ipv6Addr};
 
 #[repr(u16)]
 #[derive(Debug, Clone, Copy, PartialEq, Eq, Hash)]
-pub enum CtnlMsgTypes { // IPCTNL_MSG_
-    New			= 0,
+pub enum CtnlMsgTypes {
+    // IPCTNL_MSG_
+    New = 0,
     Get,
     Delete,
     GetCtrzero,
@@ -13,38 +15,40 @@ pub enum CtnlMsgTypes { // IPCTNL_MSG_
     GetStats,
     GetDying,
     GetUnconfirmed,
-    MAX
+    MAX,
 }
-pub const IPCTNL_MSG_CT_NEW: u16		= CtnlMsgTypes::New as u16;
-pub const IPCTNL_MSG_CT_GET: u16		= CtnlMsgTypes::Get as u16;
-pub const IPCTNL_MSG_CT_DELETE: u16		= CtnlMsgTypes::Delete as u16;
-pub const IPCTNL_MSG_CT_GET_CTRZERO: u16	= CtnlMsgTypes::GetCtrzero as u16;
-pub const IPCTNL_MSG_CT_GET_STATS_CPU: u16	= CtnlMsgTypes::GetStatsCpu as u16;
-pub const IPCTNL_MSG_CT_GET_STATS: u16		= CtnlMsgTypes::GetStats as u16;
-pub const IPCTNL_MSG_CT_GET_DYING: u16		= CtnlMsgTypes::GetDying as u16;
-pub const IPCTNL_MSG_CT_GET_UNCONFIRMED: u16	= CtnlMsgTypes::GetUnconfirmed as u16;
-pub const IPCTNL_MSG_MAX: u16			= CtnlMsgTypes::MAX as u16;
+pub const IPCTNL_MSG_CT_NEW: u16 = CtnlMsgTypes::New as u16;
+pub const IPCTNL_MSG_CT_GET: u16 = CtnlMsgTypes::Get as u16;
+pub const IPCTNL_MSG_CT_DELETE: u16 = CtnlMsgTypes::Delete as u16;
+pub const IPCTNL_MSG_CT_GET_CTRZERO: u16 = CtnlMsgTypes::GetCtrzero as u16;
+pub const IPCTNL_MSG_CT_GET_STATS_CPU: u16 = CtnlMsgTypes::GetStatsCpu as u16;
+pub const IPCTNL_MSG_CT_GET_STATS: u16 = CtnlMsgTypes::GetStats as u16;
+pub const IPCTNL_MSG_CT_GET_DYING: u16 = CtnlMsgTypes::GetDying as u16;
+pub const IPCTNL_MSG_CT_GET_UNCONFIRMED: u16 = CtnlMsgTypes::GetUnconfirmed as u16;
+pub const IPCTNL_MSG_MAX: u16 = CtnlMsgTypes::MAX as u16;
 
 #[repr(u16)]
 #[derive(Debug, Clone, Copy, PartialEq, Eq, Hash)]
-pub enum CtnlExpMsgTypes { // IPCTNL_MSG_EXP_
-    New			= 0,
+pub enum CtnlExpMsgTypes {
+    // IPCTNL_MSG_EXP_
+    New = 0,
     Get,
     Delete,
     GetStatsCpu,
-    MAX
+    MAX,
 }
-pub const IPCTNL_MSG_EXP_NEW: u16		= CtnlExpMsgTypes::New as u16;
-pub const IPCTNL_MSG_EXP_GET: u16		= CtnlExpMsgTypes::Get as u16;
-pub const IPCTNL_MSG_EXP_DELETE: u16		= CtnlExpMsgTypes::Delete as u16;
-pub const IPCTNL_MSG_EXP_GET_STATS_CPU: u16	= CtnlExpMsgTypes::GetStatsCpu as u16;
-pub const IPCTNL_MSG_EXP_MAX: u16		= CtnlExpMsgTypes::MAX as u16;
+pub const IPCTNL_MSG_EXP_NEW: u16 = CtnlExpMsgTypes::New as u16;
+pub const IPCTNL_MSG_EXP_GET: u16 = CtnlExpMsgTypes::Get as u16;
+pub const IPCTNL_MSG_EXP_DELETE: u16 = CtnlExpMsgTypes::Delete as u16;
+pub const IPCTNL_MSG_EXP_GET_STATS_CPU: u16 = CtnlExpMsgTypes::GetStatsCpu as u16;
+pub const IPCTNL_MSG_EXP_MAX: u16 = CtnlExpMsgTypes::MAX as u16;
 
 #[repr(u16)]
 #[derive(Debug, Clone, Copy, PartialEq, Eq, Hash, NlaType)]
-#[tbname="CtattrTypeTbl"]
-pub enum CtattrType { // CTA_
-    Unspec		= 0,
+#[tbname = "CtattrTypeTbl"]
+pub enum CtattrType {
+    // CTA_
+    Unspec = 0,
 
     #[nla_nest(CtattrTupleTbl, tuple_orig)]
     TupleOrig,
@@ -52,7 +56,7 @@ pub enum CtattrType { // CTA_
     #[nla_nest(CtattrTupleTbl, tuple_reply)]
     TupleReply,
 
-    #[nla_type(u32, status)]	// big endian
+    #[nla_type(u32, status)] // big endian
     Status,
 
     #[nla_nest(CtattrProtoinfoTbl, protoinfo)]
@@ -81,10 +85,12 @@ pub enum CtattrType { // CTA_
     SeqAdjReply,
 
     #[nla_type(u32, secmark)]
-    Secmark,		// obsolete
+    Secmark, // obsolete
 
     Zone,
     Secctx,
+
+    #[nla_nest(CtattrTstampTbl, timestamp)]
     Timestamp,
 
     #[nla_type(u32, mark_mask)]
@@ -94,14 +100,15 @@ pub enum CtattrType { // CTA_
     LabelsMask,
     Synproxy,
     Filter,
-    _MAX
+    _MAX,
 }
 
 #[repr(u16)]
 #[derive(Debug, Clone, Copy, PartialEq, Eq, Hash, NlaType)]
-#[tbname="CtattrTupleTbl"]
-pub enum CtattrTuple { // CTA_TUPLE_
-    Unspec	= 0,
+#[tbname = "CtattrTupleTbl"]
+pub enum CtattrTuple {
+    // CTA_TUPLE_
+    Unspec = 0,
 
     #[nla_nest(CtattrIpTbl, ip)]
     Ip,
@@ -110,35 +117,37 @@ pub enum CtattrTuple { // CTA_TUPLE_
     Proto,
 
     Zone,
-    _MAX
+    _MAX,
 }
 
 #[repr(u16)]
 #[derive(Debug, Clone, Copy, PartialEq, Eq, Hash, NlaType)]
-#[tbname="CtattrIpTbl"]
-pub enum CtattrIp { // CTA_IP_
-    Unspec	= 0,
+#[tbname = "CtattrIpTbl"]
+pub enum CtattrIp {
+    // CTA_IP_
+    Unspec = 0,
 
-    #[nla_type(Ipv4Addr, v4src)]
+    #[nla_type(Ipv4Addr, v4_src)]
     V4Src,
 
-    #[nla_type(Ipv4Addr, v4dst)]
+    #[nla_type(Ipv4Addr, v4_dst)]
     V4Dst,
 
-    #[nla_type(Ipv6Addr, v6src)]
+    #[nla_type(Ipv6Addr, v6_src)]
     V6Src,
 
-    #[nla_type(Ipv6Addr, v6dst)]
+    #[nla_type(Ipv6Addr, v6_dst)]
     V6Dst,
 
-    _MAX
+    _MAX,
 }
 
 #[repr(u16)]
 #[derive(Debug, Clone, Copy, PartialEq, Eq, Hash, NlaType)]
-#[tbname="CtattrL4ProtoTbl"]
-pub enum CtattrL4proto { // CTA_PROTO_
-    Unspec	= 0,
+#[tbname = "CtattrL4ProtoTbl"]
+pub enum CtattrL4proto {
+    // CTA_PROTO_
+    Unspec = 0,
 
     #[nla_type(u8, num)]
     Num,
@@ -166,137 +175,167 @@ pub enum CtattrL4proto { // CTA_PROTO_
 
     #[nla_type(u8, icmpv6_code)]
     Icmpv6Code,
-    _MAX
+    _MAX,
 }
 
 #[repr(u16)]
 #[derive(Debug, Clone, Copy, PartialEq, Eq, Hash, NlaType)]
-#[tbname="CtattrProtoinfoTbl"]
-pub enum CtattrProtoinfo { // CTA_PROTOINFO_
-    Unspec	= 0,
+#[tbname = "CtattrProtoinfoTbl"]
+pub enum CtattrProtoinfo {
+    // CTA_PROTOINFO_
+    Unspec = 0,
 
     #[nla_nest(CtattrProtoinfoTcpTbl, tcp)]
     Tcp,
+
+    #[nla_nest(CtattrProtoinfoDccpTbl, dccp)]
     Dccp,
+
+    #[nla_nest(CtattrProtoinfoSctpTbl, sctp)]
     Sctp,
-    _MAX
+    _MAX,
 }
 
 #[repr(u16)]
 #[derive(Debug, Clone, Copy, PartialEq, Eq, Hash, NlaType)]
-#[tbname="CtattrProtoinfoTcpTbl"]
-pub enum CtattrProtoinfoTcp { // CTA_PROTOINFO_TCP_
-    Unspec		= 0,
+#[tbname = "CtattrProtoinfoTcpTbl"]
+pub enum CtattrProtoinfoTcp {
+    // CTA_PROTOINFO_TCP_
+    Unspec = 0,
 
-    // #[nla_type(
+    #[nla_type(u8, state)]
     State,
+
+    #[nla_type(u8, wscale_original)]
     WscaleOriginal,
+
+    #[nla_type(u8, wscale_reply)]
     WscaleReply,
+
+    #[nla_type(NfCtTcpFlags, flags_original)]
     FlagsOriginal,
+
+    #[nla_type(NfCtTcpFlags, flags_reply)]
     FlagsReply,
-    _MAX
+    _MAX,
 }
 
 #[repr(u16)]
 #[derive(Debug, Clone, Copy, PartialEq, Eq, Hash, NlaType)]
-#[tbname="CtattrProtoinfoDccpTbl"]
-pub enum CtattrProtoinfoDccp { // CTA_PROTOINFO_DCCP_
-    Unspec		= 0,
+#[tbname = "CtattrProtoinfoDccpTbl"]
+pub enum CtattrProtoinfoDccp {
+    // CTA_PROTOINFO_DCCP_
+    Unspec = 0,
     State,
     Role,
     HandshakeSeq,
     Pad,
-    _MAX
+    _MAX,
 }
 
 #[repr(u16)]
 #[derive(Debug, Clone, Copy, PartialEq, Eq, Hash, NlaType)]
-#[tbname="CtattrProtoinfoSctpTbl"]
-pub enum CtattrProtoinfoSctp { // CTA_PROTOINFO_SCTP_
-    Unspec		= 0,
+#[tbname = "CtattrProtoinfoSctpTbl"]
+pub enum CtattrProtoinfoSctp {
+    // CTA_PROTOINFO_SCTP_
+    Unspec = 0,
     State,
     VtagOriginal,
     VtagReply,
-    _MAX
+    _MAX,
 }
 
 #[repr(u16)]
 #[derive(Debug, Clone, Copy, PartialEq, Eq, Hash, NlaType)]
-#[tbname="CtattrCountersTbl"]
-pub enum CtattrCounters { // CTA_COUNTERS_
-    // big endian
-    Unspec	= 0,
+#[tbname = "CtattrCountersTbl"]
+pub enum CtattrCounters {
+    // CTA_COUNTERS_
+    Unspec = 0,
+
     #[nla_type(u64, packets)]
-    Packets,	// 64bit counters
+    Packets, // 64bit counters
+
     #[nla_type(u64, bytes)]
-    Bytes,	// 64bit counters
-    Packets32,	// old 32bit counters, unused, XXX: 32Packets
-    Bytes32,	// old 32bit counters, unused, XXX: 32Bytes
+    Bytes, // 64bit counters
+
+    Packets32, // old 32bit counters, unused, XXX: 32Packets
+    Bytes32,   // old 32bit counters, unused, XXX: 32Bytes
     Pad,
-    _MAX
+    _MAX,
 }
 
 #[repr(u16)]
 #[derive(Debug, Clone, Copy, PartialEq, Eq, Hash, NlaType)]
-#[tbname="CtattrTstampTbl"]
-pub enum CtattrTstamp { // CTA_TIMESTAMP_
-    Unspec	= 0,
-    Start	= 1,
-    Stop	= 2,
-    Pad		= 3,
-    _MAX	= 4,
+#[tbname = "CtattrTstampTbl"]
+pub enum CtattrTstamp {
+    // CTA_TIMESTAMP_
+    Unspec = 0,
+
+    #[nla_type(u64, start)]
+    Start = 1,
+
+    #[nla_type(u64, stop)]
+    Stop = 2,
+
+    Pad = 3,
+    _MAX = 4,
 }
 
 #[repr(u16)]
 #[derive(Debug, Clone, Copy, PartialEq, Eq, Hash, NlaType)]
-#[tbname="CtattrNatTbl"]
-pub enum CtattrNat { // CTA_NAT_
-    Unspec	= 0,
+#[tbname = "CtattrNatTbl"]
+pub enum CtattrNat {
+    // CTA_NAT_
+    Unspec = 0,
     V4Minip,
     V4Maxip,
     Proto,
     V6Minip,
     V6Maxip,
-    _MAX
+    _MAX,
 }
 
 #[repr(u16)]
 #[derive(Debug, Clone, Copy, PartialEq, Eq, Hash, NlaType)]
-#[tbname="CtattrProtonatTbl"]
-pub enum CtattrProtonat { // CTA_PROTONAT_
-    Unspec	= 0,
-    PortMin	= 1,
-    PortMax	= 2,
-    _MAX	= 3,
+#[tbname = "CtattrProtonatTbl"]
+pub enum CtattrProtonat {
+    // CTA_PROTONAT_
+    Unspec = 0,
+    PortMin = 1,
+    PortMax = 2,
+    _MAX = 3,
 }
 
 #[repr(u16)]
 #[derive(Debug, Clone, Copy, PartialEq, Eq, Hash, NlaType)]
-#[tbname="CtattrSeqadjTbl"]
-pub enum CtattrSeqadj { // CTA_SEQADJ_
-    Unspec		= 0,
+#[tbname = "CtattrSeqadjTbl"]
+pub enum CtattrSeqadj {
+    // CTA_SEQADJ_
+    Unspec = 0,
     CorrectionPos,
     OffsetBefore,
     OffsetAfter,
-    _MAX
+    _MAX,
 }
 
 #[repr(u16)]
 #[derive(Debug, Clone, Copy, PartialEq, Eq, Hash, NlaType)]
-#[tbname="CtattrNatseqTbl"]
-pub enum CtattrNatseq { // CTA_NAT_SEQ_
-    Unspec		= 0,
+#[tbname = "CtattrNatseqTbl"]
+pub enum CtattrNatseq {
+    // CTA_NAT_SEQ_
+    Unspec = 0,
     CorrectionPos,
     OffsetBefore,
     OffsetAfter,
-    _MAX
+    _MAX,
 }
 
 #[repr(u16)]
 #[derive(Debug, Clone, Copy, PartialEq, Eq, Hash, NlaType)]
-#[tbname="CtattrSynproxyTbl"]
-pub enum CtattrSynproxy { // CTA_SYNPROXY_
-    Unspec	= 0,
+#[tbname = "CtattrSynproxyTbl"]
+pub enum CtattrSynproxy {
+    // CTA_SYNPROXY_
+    Unspec = 0,
     Isn,
     Its,
     Tsoff,
@@ -305,112 +344,142 @@ pub enum CtattrSynproxy { // CTA_SYNPROXY_
 
 #[repr(u16)]
 #[derive(Debug, Clone, Copy, PartialEq, Eq, Hash, NlaType)]
-#[tbname="CtattrExpectTbl"]
-pub enum CtattrExpect { // CTA_EXPECT_
-    Unspec	= 0,
+#[tbname = "CtattrExpectTbl"]
+pub enum CtattrExpect {
+    // CTA_EXPECT_
+    Unspec = 0,
+
+    #[nla_nest(CtattrTupleTbl, master)]
     Master,
+
+    #[nla_nest(CtattrTupleTbl, tuple)]
     Tuple,
+
+    #[nla_nest(CtattrTupleTbl, mask)]
     Mask,
+
+    #[nla_type(u32, timeout)]
     Timeout,
+
+    #[nla_type(u32, id)]
     Id,
+
+    #[nla_type(str, help_name)]
     HelpName,
+
+    #[nla_type(u16, zone)]
     Zone,
+
+    #[nla_type(u32, flags)]
     Flags,
+
+    #[nla_type(u32, class)]
     Class,
+
+    #[nla_nest(CtattrExpectNatTbl, nat)]
     Nat,
+
+    #[nla_type(nulstr, expfn)]
     Fn,
-    _MAX
+
+    _MAX,
 }
 
 #[repr(u16)]
 #[derive(Debug, Clone, Copy, PartialEq, Eq, Hash, NlaType)]
-#[tbname="CtattrExpectNatTbl"]
-pub enum CtattrExpectNat { // CTA_EXPECT_NAT_
-    Unspec	= 0,
+#[tbname = "CtattrExpectNatTbl"]
+pub enum CtattrExpectNat {
+    // CTA_EXPECT_NAT_
+    Unspec = 0,
     Dir,
     Tuple,
-    _MAX
+    _MAX,
 }
 
 #[repr(u16)]
 #[derive(Debug, Clone, Copy, PartialEq, Eq, Hash, NlaType)]
-#[tbname="CtattrHelpTbl"]
-pub enum CtattrHelp { // CTA_HELP_
-    Unspec	= 0,
+#[tbname = "CtattrHelpTbl"]
+pub enum CtattrHelp {
+    // CTA_HELP_
+    Unspec = 0,
     Name,
     Info,
-    _MAX
+    _MAX,
 }
 
 #[repr(u16)]
 #[derive(Debug, Clone, Copy, PartialEq, Eq, Hash, NlaType)]
-#[tbname="CtattrSecctxTbl"]
-pub enum CtattrSecctx { // CTA_SECCTX_
-    Unspec	= 0,
+#[tbname = "CtattrSecctxTbl"]
+pub enum CtattrSecctx {
+    // CTA_SECCTX_
+    Unspec = 0,
     Name,
-    _MAX
+    _MAX,
 }
 
 #[repr(u16)]
 #[derive(Debug, Clone, Copy, PartialEq, Eq, Hash, NlaType)]
-#[tbname="CtattrStatsCpuTbl"]
-pub enum CtattrStatsCpu { // CTA_STATS_
+#[tbname = "CtattrStatsCpuTbl"]
+pub enum CtattrStatsCpu {
+    // CTA_STATS_
     Unspec,
-    Searched,		// no longer used
+    Searched, // no longer used
     Found,
-    New,		// no longer used
+    New, // no longer used
     Invalid,
     Ignore,
-    Delete,		// no longer used
-    DeleteList,		// no longer used
+    Delete,     // no longer used
+    DeleteList, // no longer used
     Insert,
     InsertFailed,
     Drop,
     EarlyDrop,
-    StatsError,		// note: `#[deny(ambiguous_associated_items)]` on by default
+    StatsError, // note: `#[deny(ambiguous_associated_items)]` on by default
     SearchRestart,
-    _MAX
+    _MAX,
 }
 
 #[repr(u16)]
 #[derive(Debug, Clone, Copy, PartialEq, Eq, Hash, NlaType)]
-#[tbname="CtattrStatsGlobalTbl"]
-pub enum CtattrStatsGlobal { // CTA_STATS_GLOBAL_
-    Unspec	= 0,
+#[tbname = "CtattrStatsGlobalTbl"]
+pub enum CtattrStatsGlobal {
+    // CTA_STATS_GLOBAL_
+    Unspec = 0,
     Entries,
     MaxEntries,
-    _MAX
+    _MAX,
 }
 
 #[repr(u16)]
 #[derive(Debug, Clone, Copy, PartialEq, Eq, Hash, NlaType)]
-#[tbname="CtattrExpectStatsTbl"]
-pub enum CtattrExpectStats { // CTA_STATS_EXP_
-    Unspec	= 0,
+#[tbname = "CtattrExpectStatsTbl"]
+pub enum CtattrExpectStats {
+    // CTA_STATS_EXP_
+    Unspec = 0,
     New,
     Create,
     Delete,
-    _MAX
+    _MAX,
 }
 
 #[repr(u16)]
 #[derive(Debug, Clone, Copy, PartialEq, Eq, Hash, NlaType)]
-#[tbname="CtattrFilterTbl"]
-pub enum CtattrFilter { // CTA_FILTER_
-    Unspec	= 0,
+#[tbname = "CtattrFilterTbl"]
+pub enum CtattrFilter {
+    // CTA_FILTER_
+    Unspec = 0,
     OrigFlags,
     ReplyFlags,
-    _MAX
+    _MAX,
 }
-
 
 // XXX: copy only NF_NETLINK_ from nfnetlink_compat.h
 //
 // Old nfnetlink macros for userspace
 // nfnetlink groups: Up to 32 maximum
-pub const NF_NETLINK_CONNTRACK_NEW: u32		= 0x00000001;
-pub const NF_NETLINK_CONNTRACK_UPDATE: u32	= 0x00000002;
-pub const NF_NETLINK_CONNTRACK_DESTROY: u32	= 0x00000004;
-pub const NF_NETLINK_CONNTRACK_EXP_NEW: u32	= 0x00000008;
-pub const NF_NETLINK_CONNTRACK_EXP_UPDATE: u32	= 0x00000010;
-pub const NF_NETLINK_CONNTRACK_EXP_DESTROY: u32	= 0x00000020;
+pub const NF_NETLINK_CONNTRACK_NEW: u32 = 0x00000001;
+pub const NF_NETLINK_CONNTRACK_UPDATE: u32 = 0x00000002;
+pub const NF_NETLINK_CONNTRACK_DESTROY: u32 = 0x00000004;
+pub const NF_NETLINK_CONNTRACK_EXP_NEW: u32 = 0x00000008;
+pub const NF_NETLINK_CONNTRACK_EXP_UPDATE: u32 = 0x00000010;
+pub const NF_NETLINK_CONNTRACK_EXP_DESTROY: u32 = 0x00000020;

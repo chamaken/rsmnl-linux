@@ -1,9 +1,9 @@
 use errno::Errno;
-use mnl:: { MsgVec, Attr, AttrTbl, Result };
+use mnl::{Attr, AttrTbl, MsgVec, Result};
 
 #[repr(u16)]
 #[derive(Debug, Clone, Copy, PartialEq, Eq, Hash, NlaType)]
-#[tbname="DevconfTbl"]
+#[tbname = "DevconfTbl"]
 pub enum Devconf {
     #[nla_type(i32, forwarding)]
     Forwarding = 0,

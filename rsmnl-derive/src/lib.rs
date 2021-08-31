@@ -1,18 +1,16 @@
-#![recursion_limit="256"]
+#![recursion_limit = "256"]
 
 extern crate proc_macro;
 extern crate proc_macro2;
 extern crate quote;
 extern crate syn;
 
-use proc_macro2:: { Span, TokenStream };
-use quote:: { quote, ToTokens };
-use syn:: {
-    Lit, Data, Result, DeriveInput, Error, Ident, Attribute, Meta, Token, Type, TypeArray, TypePath,
-    token,
-    parse::{
-        Parse, ParseStream,
-    }
+use proc_macro2::{Span, TokenStream};
+use quote::{quote, ToTokens};
+use syn::{
+    parse::{Parse, ParseStream},
+    token, Attribute, Data, DeriveInput, Error, Ident, Lit, Meta, Result, Token, Type, TypeArray,
+    TypePath,
 };
 
 #[proc_macro_derive(NlaType, attributes(tbname, nla_type, nla_nest))]
@@ -30,6 +28,7 @@ fn _derive(input: DeriveInput) -> Result<TokenStream> {
     };
 
     let ident = &input.ident;
+    // implements TryFrom<u16>, Into<usize> and Into<u16> for Enum
     let mut ret = quote! {
         impl std::convert::TryFrom<u16> for #ident {
             type Error = Errno;
@@ -42,11 +41,13 @@ fn _derive(input: DeriveInput) -> Result<TokenStream> {
                 }
             }
         }
+        #[allow(clippy::from_over_into)]
         impl std::convert::Into<usize> for #ident {
             fn into(self) -> usize {
                 self as usize
             }
         }
+        #[allow(clippy::from_over_into)]
         impl std::convert::Into<u16> for #ident {
             fn into(self) -> u16 {
                 self as u16
@@ -54,11 +55,12 @@ fn _derive(input: DeriveInput) -> Result<TokenStream> {
         }
     };
 
+    // get getter and putter for each attr
     let mut getfns: Vec<TokenStream> = Vec::new();
     let mut putfns: Vec<TokenStream> = Vec::new();
     for var in data.variants.iter() {
         for attr in var.attrs.iter() {
-            if let Some((getfn, putfn)) = parse_var_attr(&ident, &var.ident, attr)?  {
+            if let Some((getfn, putfn)) = parse_var_attr(&ident, &var.ident, attr)? {
                 getfns.push(getfn);
                 putfns.push(putfn);
             }
@@ -74,15 +76,19 @@ fn _derive(input: DeriveInput) -> Result<TokenStream> {
         };
     }
 
-    let tb_idents: Vec<_> = input.attrs.iter()
-        .map(|attr| { parse_attr(attr).ok()? })
-        .filter(|x| { x.is_some() })
+    // tbname="..."
+    let tb_idents: Vec<_> = input
+        .attrs
+        .iter()
+        .map(|attr| parse_attr(attr).ok()?)
+        .filter(|x| x.is_some())
         .map(|x| x.unwrap())
         .collect();
     if tb_idents.len() == 0 {
         return Ok(ret);
     }
 
+    // implements AttrTbl
     // XXX: should check multiple tbname specified
     let tbid = &tb_idents[0];
     ret = quote! {
@@ -124,36 +130,44 @@ fn _derive(input: DeriveInput) -> Result<TokenStream> {
     });
 }
 
+// tbname="..."
 fn parse_attr(attr: &Attribute) -> Result<Option<Ident>> {
     match &attr.path {
         path if path.is_ident("nla_type") => {
-            return Err(Error::new_spanned(attr, "#[nla_ ...] is specified on variant"));
-        },
+            return Err(Error::new_spanned(
+                attr,
+                "#[nla_ ...] is specified on variant",
+            ));
+        }
         path if path.is_ident("nla_nest") => {
-            return Err(Error::new_spanned(attr, "#[nla_ ...] is specified on variant"));
-        },
-        path if path.is_ident("tbname") => {
-            match attr.parse_meta()? {
-                Meta::NameValue(nv) => {
-                    match nv.lit {
-                        Lit::Str(lit_str) => {
-                            return Ok(Some(Ident::new(&lit_str.value(), Span::call_site())));
-                        },
-                        _ => {
-                            return Err(Error::new_spanned(attr, "#[tbname] must be a string"));
-                        }
-                    }
-                },
-                _ => {
-                    return Err(Error::new_spanned(attr, "#[tbname] must be a name-value"));
+            return Err(Error::new_spanned(
+                attr,
+                "#[nla_ ...] is specified on variant",
+            ));
+        }
+        path if path.is_ident("tbname") => match attr.parse_meta()? {
+            Meta::NameValue(nv) => match nv.lit {
+                Lit::Str(lit_str) => {
+                    return Ok(Some(Ident::new(&lit_str.value(), Span::call_site())));
                 }
+                _ => {
+                    return Err(Error::new_spanned(attr, "#[tbname] must be a string"));
+                }
+            },
+            _ => {
+                return Err(Error::new_spanned(attr, "#[tbname] must be a name-value"));
             }
         },
         _ => return Ok(None),
     }
 }
 
-fn parse_var_attr(ei: &Ident, vi: &Ident, attr: &Attribute) -> Result<Option<(TokenStream, TokenStream)>> {
+// nla_type="..." or nla_nest="..."
+fn parse_var_attr(
+    ei: &Ident,
+    vi: &Ident,
+    attr: &Attribute,
+) -> Result<Option<(TokenStream, TokenStream)>> {
     if attr.path.is_ident("nla_type") {
         parse_type_attr(ei, vi, attr)
     } else if attr.path.is_ident("nla_nest") {
@@ -164,7 +178,19 @@ fn parse_var_attr(ei: &Ident, vi: &Ident, attr: &Attribute) -> Result<Option<(To
     }
 }
 
-fn parse_type_attr(ei: &Ident, vi: &Ident, attr: &Attribute) -> Result<Option<(TokenStream, TokenStream)>> {
+// nla_type="(_1_, _2_)"
+// 2: getter fn name
+// 1: Id  	- struct name or type
+//    Str	- "str"
+//    NulStr	- "strz"
+//    Bytes	- "bytes"
+//    Array	- "["
+//    Path      - mod::struct
+fn parse_type_attr(
+    ei: &Ident,
+    vi: &Ident,
+    attr: &Attribute,
+) -> Result<Option<(TokenStream, TokenStream)>> {
     #[derive(Debug)]
     enum SigType {
         Id(Ident),
@@ -173,7 +199,7 @@ fn parse_type_attr(ei: &Ident, vi: &Ident, attr: &Attribute) -> Result<Option<(T
         Bytes,
         Array(TypeArray),
         Path(TypePath),
-        // Flag
+        Flag,
     }
     impl ToTokens for SigType {
         fn to_tokens(&self, tokens: &mut TokenStream) {
@@ -182,6 +208,7 @@ fn parse_type_attr(ei: &Ident, vi: &Ident, attr: &Attribute) -> Result<Option<(T
                 Self::Str => "str".to_tokens(tokens),
                 Self::NulStr => "strz".to_tokens(tokens),
                 Self::Bytes => "bytes".to_tokens(tokens),
+                Self::Flag => "flag".to_tokens(tokens),
                 Self::Array(a) => a.to_tokens(tokens),
                 Self::Path(p) => p.to_tokens(tokens),
             }
@@ -193,14 +220,15 @@ fn parse_type_attr(ei: &Ident, vi: &Ident, attr: &Attribute) -> Result<Option<(T
                 match input.parse::<Type>()? {
                     Type::Array(t) => return Ok(Self::Array(t)),
                     Type::Path(t) => return Ok(Self::Path(t)),
-                    _ => return Err(input.error("expected identifier, array type or TypePath"))
+                    _ => return Err(input.error("expected identifier, array type or TypePath")),
                 };
             }
             match input.parse::<Ident>()? {
-                s if s == "bytes" => { Ok(Self::Bytes) },
-                s if s == "str" => { Ok(Self::Str) },
-                s if s == "nulstr" => { Ok(Self::NulStr) },
-                s @ _ => Ok(Self::Id(s))
+                s if s == "bytes" => Ok(Self::Bytes),
+                s if s == "str" => Ok(Self::Str),
+                s if s == "nulstr" => Ok(Self::NulStr),
+                s if s == "flag" => Ok(Self::Flag),
+                s @ _ => Ok(Self::Id(s)),
             }
         }
     }
@@ -217,7 +245,7 @@ fn parse_type_attr(ei: &Ident, vi: &Ident, attr: &Attribute) -> Result<Option<(T
             let name = input.parse()?;
             Ok(Signature {
                 rtype: rtype,
-                name: name
+                name: name,
             })
         }
     }
@@ -241,7 +269,7 @@ fn parse_type_attr(ei: &Ident, vi: &Ident, attr: &Attribute) -> Result<Option<(T
                 pub fn #putfn<'a>(nlv: &'a mut MsgVec, data: &str) -> Result<&'a mut MsgVec> {
                     nlv.put_str(#ei::#vi, data)
                 }
-            }
+            },
         ))),
         SigType::NulStr => Ok(Some((
             quote! {
@@ -257,7 +285,7 @@ fn parse_type_attr(ei: &Ident, vi: &Ident, attr: &Attribute) -> Result<Option<(T
                 pub fn #putfn<'a>(nlv: &'a mut MsgVec, data: &str) -> Result<&'a mut MsgVec> {
                     nlv.put_strz(#ei::#vi, data)
                 }
-            }
+            },
         ))),
         SigType::Bytes => Ok(Some((
             quote! {
@@ -273,10 +301,27 @@ fn parse_type_attr(ei: &Ident, vi: &Ident, attr: &Attribute) -> Result<Option<(T
                 pub fn #putfn<'a>(nlv: &'a mut MsgVec, data: &[u8]) -> Result<&'a mut MsgVec> {
                     nlv.put_bytes(#ei::#vi, data)
                 }
-            }
+            },
         ))),
-        SigType::Id(_) | SigType::Array(_) | SigType::Path(_) =>
-            Ok(Some((
+        SigType::Flag => Ok(Some((
+            quote! {
+                pub fn #name(&self) -> Result<bool> {
+                    if let Some(attr) = self[#ei::#vi] {
+                        if attr.payload_len() > 0 {
+                            return Err(Errno(libc::ERANGE));
+                        }
+                        return Ok(true);
+                    }
+                    Ok(false)
+                }
+            },
+            quote! {
+                pub fn #putfn<'a>(nlv: &'a mut MsgVec) -> Result<&'a mut MsgVec> {
+                    nlv.put_flag(#ei::#vi)
+                }
+            },
+        ))),
+        SigType::Id(_) | SigType::Array(_) | SigType::Path(_) => Ok(Some((
             quote! {
                 pub fn #name(&self) -> Result<Option<&#tid>> {
                     if let Some(attr) = self[#ei::#vi] {
@@ -290,12 +335,22 @@ fn parse_type_attr(ei: &Ident, vi: &Ident, attr: &Attribute) -> Result<Option<(T
                 pub fn #putfn<'a>(nlv: &'a mut MsgVec, data: &#tid) -> Result<&'a mut MsgVec> {
                     nlv.put(#ei::#vi, data)
                 }
-            }
+            },
         ))),
     }
 }
 
-fn parse_nest_attr(ei: &Ident, vi: &Ident, attr: &Attribute) -> Result<Option<(TokenStream, TokenStream)>> {
+// nla_nest="(_1_, _2_)"
+// 2: getter fn name
+// 1: Id  	- struct name or type
+//    Path      - mod::struct
+//    ArrayId	- "[" Id
+//    ArrayPath	- "[" Path
+fn parse_nest_attr(
+    ei: &Ident,
+    vi: &Ident,
+    attr: &Attribute,
+) -> Result<Option<(TokenStream, TokenStream)>> {
     #[derive(Debug)]
     enum SigType {
         Id(Ident),
@@ -312,16 +367,16 @@ fn parse_nest_attr(ei: &Ident, vi: &Ident, attr: &Attribute) -> Result<Option<(T
                     return Ok(Self::ArrayPath(content.parse::<TypePath>()?));
                 }
                 match content.parse::<Ident>() {
-                    Ok(t)=> return Ok(Self::ArrayId(t)),
-                    Err(_) => return Err(input.error("expected identifier or TypePath"))
+                    Ok(t) => return Ok(Self::ArrayId(t)),
+                    Err(_) => return Err(input.error("expected identifier or TypePath")),
                 }
             } else {
                 if input.peek2(Token![:]) {
                     return Ok(Self::Path(input.parse::<TypePath>()?));
                 }
                 match input.parse::<Ident>() {
-                    Ok(t)=> return Ok(Self::Id(t)),
-                    Err(_) => return Err(input.error("expected identifier or TypePath"))
+                    Ok(t) => return Ok(Self::Id(t)),
+                    Err(_) => return Err(input.error("expected identifier or TypePath")),
                 }
             }
         }
@@ -346,7 +401,7 @@ fn parse_nest_attr(ei: &Ident, vi: &Ident, attr: &Attribute) -> Result<Option<(T
             let name = input.parse()?;
             Ok(Signature {
                 rtype: rtype,
-                name: name
+                name: name,
             })
         }
     }
@@ -356,39 +411,37 @@ fn parse_nest_attr(ei: &Ident, vi: &Ident, attr: &Attribute) -> Result<Option<(T
     let tid = args.rtype;
     let startfn = Ident::new(&format!("{}_start", name), Span::call_site());
     match tid {
-        SigType::ArrayId(_) | SigType::ArrayPath(_) =>
-            Ok(Some((
-                quote! {
-                    pub fn #name(&self) -> Result<Option<Vec<#tid>>> {
-                        if let Some(attr) = self[#ei::#vi] {
-                            Ok(Some(attr.nest_array::<#tid>()?))
-                        } else {
-                            Ok(None)
-                        }
-                    }
-                },
-                quote! {
-                    pub fn #startfn(nlv: &mut MsgVec) -> Result<&mut MsgVec> {
-                        nlv.nest_start(#ei::#vi)
+        SigType::ArrayId(_) | SigType::ArrayPath(_) => Ok(Some((
+            quote! {
+                pub fn #name(&self) -> Result<Option<Vec<#tid>>> {
+                    if let Some(attr) = self[#ei::#vi] {
+                        Ok(Some(attr.nest_array::<#tid>()?))
+                    } else {
+                        Ok(None)
                     }
                 }
-            ))),
-        SigType::Id(_) | SigType::Path(_) =>
-            Ok(Some((
-                quote! {
-                    pub fn #name(&self) -> Result<Option<#tid>> {
-                        if let Some(attr) = self[#ei::#vi] {
-                            Ok(Some(#tid::from_nest(attr)?))
-                        } else {
-                            Ok(None)
-                        }
-                    }
-                },
-                quote! {
-                    pub fn #startfn(nlv: &mut MsgVec) -> Result<&mut MsgVec> {
-                        nlv.nest_start(#ei::#vi)
+            },
+            quote! {
+                pub fn #startfn(nlv: &mut MsgVec) -> Result<&mut MsgVec> {
+                    nlv.nest_start(#ei::#vi)
+                }
+            },
+        ))),
+        SigType::Id(_) | SigType::Path(_) => Ok(Some((
+            quote! {
+                pub fn #name(&self) -> Result<Option<#tid>> {
+                    if let Some(attr) = self[#ei::#vi] {
+                        Ok(Some(#tid::from_nest(attr)?))
+                    } else {
+                        Ok(None)
                     }
                 }
-            )))
+            },
+            quote! {
+                pub fn #startfn(nlv: &mut MsgVec) -> Result<&mut MsgVec> {
+                    nlv.nest_start(#ei::#vi)
+                }
+            },
+        ))),
     }
 }
