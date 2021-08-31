@@ -1,7 +1,6 @@
-use std:: {
-    env,
-    mem,
-    time::{ SystemTime, UNIX_EPOCH }
+use std::{
+    env, mem, process,
+    time::{SystemTime, UNIX_EPOCH},
 };
 
 extern crate libc;
@@ -10,15 +9,10 @@ extern crate errno;
 use errno::Errno;
 
 extern crate rsmnl as mnl;
-use mnl:: {
-    Socket, Msghdr, MsgVec, CbStatus, CbResult, AttrTbl,
-};
+use mnl::{AttrTbl, CbResult, CbStatus, MsgVec, Msghdr, Socket};
 
 extern crate rsmnl_linux as linux;
-use linux:: {
-    netlink:: { self, Family },
-    rtnetlink:: { self, Rtmsg, RtattrTypeTbl },
-};
+use linux::rtnetlink::{RtattrTypeTbl, Rtmsg};
 
 fn attributes_show_ip(family: i32, tb: &RtattrTypeTbl) -> Result<(), Errno> {
     tb.table()?.map(|x| print!("table={} ", x));
@@ -57,7 +51,8 @@ fn attributes_show_ip(family: i32, tb: &RtattrTypeTbl) -> Result<(), Errno> {
         xtb.initrwnd()?.map(|x| print!("initrwnd={} ", x));
         xtb.quickack()?.map(|x| print!("quickack={} ", x));
         xtb.cc_algo()?.map(|x| print!("cc_algo={} ", x));
-        xtb.fastopen_no_cookie()?.map(|x| print!("fastopen_no_cookie={} ", x));
+        xtb.fastopen_no_cookie()?
+            .map(|x| print!("fastopen_no_cookie={} ", x));
     }
     Ok(())
 }
@@ -136,49 +131,60 @@ fn data_cb(nlh: &Msghdr) -> CbResult {
     // 	RTM_F_PREFIX	= 0x800: Prefix addresses
     print!("flags={:x} ", rm.rtm_flags);
 
-    attributes_show_ip(rm.rtm_family as i32,
-                       &RtattrTypeTbl::from_nlmsg(mem::size_of::<Rtmsg>(), nlh)?)?;
+    attributes_show_ip(
+        rm.rtm_family as i32,
+        &RtattrTypeTbl::from_nlmsg(mem::size_of::<Rtmsg>(), nlh)?,
+    )?;
     println!("");
 
     Ok(CbStatus::Ok)
 }
 
-fn main() {
+fn main() -> Result<(), String> {
     let args: Vec<_> = env::args().collect();
     if args.len() != 2 {
-        panic!("Usage: {} <inet|inet6>", args[0]);
+        println!("Usage: {} <inet|inet6>", args[0]);
+        process::exit(libc::EXIT_FAILURE);
     }
-
-    let mut nl = Socket::open(Family::Route, 0)
-        .unwrap_or_else(|errno| panic!("mnl_socket_open: {}", errno));
-    nl.bind(0, mnl::SOCKET_AUTOPID)
-        .unwrap_or_else(|errno| panic!("mnl_socket_bind: {}", errno));
-    let portid = nl.portid();
-
-    let seq = SystemTime::now().duration_since(UNIX_EPOCH).unwrap().as_secs() as u32;
 
     let mut nlv = MsgVec::new();
     let mut nlh = nlv.put_header();
-    nlh.nlmsg_type = rtnetlink::RTM_GETROUTE;
-    nlh.nlmsg_flags = netlink::NLM_F_REQUEST | netlink::NLM_F_DUMP;
+    nlh.nlmsg_type = libc::RTM_GETROUTE;
+    nlh.nlmsg_flags = (libc::NLM_F_REQUEST | libc::NLM_F_DUMP) as u16;
+    let seq = SystemTime::now()
+        .duration_since(UNIX_EPOCH)
+        .unwrap()
+        .as_secs() as u32;
     nlh.nlmsg_seq = seq;
+
     let rtm = nlv.put_extra_header::<Rtmsg>().unwrap();
     if args[1] == "inet" {
         rtm.rtm_family = libc::AF_INET as u8;
     } else if args[1] == "inet6" {
         rtm.rtm_family = libc::AF_INET6 as u8;
     }
+
+    let mut nl = Socket::open(libc::NETLINK_ROUTE, 0)
+        .map_err(|errno| format!("mnl_socket_open: {}", errno))?;
+
+    nl.bind(0, mnl::SOCKET_AUTOPID)
+        .map_err(|errno| format!("mnl_socket_bind: {}", errno))?;
+    let portid = nl.portid();
+
     nl.sendto(&nlv)
-        .unwrap_or_else(|errno| panic!("mnl_socket_sendto: {}", errno));
+        .map_err(|errno| format!("mnl_socket_sendto: {}", errno))?;
 
     let mut buf = mnl::dump_buffer();
     loop {
-        let nrecv = nl.recvfrom(&mut buf)
-            .unwrap_or_else(|errno| panic!("mnl_socket_recvfrom: {}", errno));
+        let nrecv = nl
+            .recvfrom(&mut buf)
+            .map_err(|errno| format!("mnl_socket_recvfrom: {}", errno))?;
         match mnl::cb_run(&buf[0..nrecv], seq, portid, Some(data_cb)) {
             Ok(CbStatus::Ok) => continue,
             Ok(CbStatus::Stop) => break,
-            Err(errno) => panic!("mnl_cb_run: {}", errno),
+            Err(errno) => return Err(format!("mnl_cb_run: {}", errno)),
         }
     }
+
+    Ok(())
 }

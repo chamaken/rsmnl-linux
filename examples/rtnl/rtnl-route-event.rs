@@ -6,13 +6,10 @@ extern crate errno;
 use errno::Errno;
 
 extern crate rsmnl as mnl;
-use mnl:: { Socket, Msghdr, CbStatus, CbResult, AttrTbl, };
+use mnl::{AttrTbl, CbResult, CbStatus, Msghdr, Socket};
 
 extern crate rsmnl_linux as linux;
-use linux:: {
-    netlink::Family,
-    rtnetlink:: { self, Rtmsg, RtattrTypeTbl },
-};
+use linux::rtnetlink::{self, RtattrTypeTbl, Rtmsg};
 
 fn attributes_show_ip(family: i32, tb: &RtattrTypeTbl) -> Result<(), Errno> {
     tb.table()?.map(|x| print!("table={} ", x));
@@ -51,7 +48,8 @@ fn attributes_show_ip(family: i32, tb: &RtattrTypeTbl) -> Result<(), Errno> {
         xtb.initrwnd()?.map(|x| print!("initrwnd={} ", x));
         xtb.quickack()?.map(|x| print!("quickack={} ", x));
         xtb.cc_algo()?.map(|x| print!("cc_algo={} ", x));
-        xtb.fastopen_no_cookie()?.map(|x| print!("fastopen_no_cookie={} ", x));
+        xtb.fastopen_no_cookie()?
+            .map(|x| print!("fastopen_no_cookie={} ", x));
     }
     Ok(())
 }
@@ -62,7 +60,7 @@ fn data_cb(nlh: &Msghdr) -> CbResult {
     match nlh.nlmsg_type {
         n if n == rtnetlink::RTM_NEWROUTE => print!("[NEW] "),
         n if n == rtnetlink::RTM_DELROUTE => print!("[DEL] "),
-        _ => {},
+        _ => {}
     }
 
     // protocol family = AF_INET | AF_INET6 //
@@ -136,28 +134,36 @@ fn data_cb(nlh: &Msghdr) -> CbResult {
     // 	RTM_F_PREFIX	= 0x800: Prefix addresses
     print!("flags={:x} ", rm.rtm_flags);
 
-    attributes_show_ip(rm.rtm_family as i32,
-                       &RtattrTypeTbl::from_nlmsg(mem::size_of::<Rtmsg>(), nlh)?)?;
+    attributes_show_ip(
+        rm.rtm_family as i32,
+        &RtattrTypeTbl::from_nlmsg(mem::size_of::<Rtmsg>(), nlh)?,
+    )?;
     println!("");
 
     Ok(CbStatus::Ok)
 }
 
-fn main() {
-    let mut nl = Socket::open(Family::Route, 0)
-        .unwrap_or_else(|errno| panic!("mnl_socket_open: {}", errno));
-    nl.bind(rtnetlink::RTMGRP_IPV4_ROUTE | rtnetlink::RTMGRP_IPV6_ROUTE,
-            mnl::SOCKET_AUTOPID)
-        .unwrap_or_else(|errno| panic!("mnl_socket_bind: {}", errno));
+fn main() -> Result<(), String> {
+    let mut nl = Socket::open(libc::NETLINK_ROUTE, 0)
+        .map_err(|errno| format!("mnl_socket_open: {}", errno))?;
+
+    nl.bind(
+        rtnetlink::RTMGRP_IPV4_ROUTE | rtnetlink::RTMGRP_IPV6_ROUTE,
+        mnl::SOCKET_AUTOPID,
+    )
+    .map_err(|errno| format!("mnl_socket_bind: {}", errno))?;
 
     let mut buf = mnl::default_buffer();
     loop {
-        let nrecv = nl.recvfrom(&mut buf)
-            .unwrap_or_else(|errno| panic!("mnl_socket_recvfrom: {}", errno));
+        let nrecv = nl
+            .recvfrom(&mut buf)
+            .map_err(|errno| format!("mnl_socket_recvfrom: {}", errno))?;
         match mnl::cb_run(&buf[0..nrecv], 0, 0, Some(data_cb)) {
             Ok(CbStatus::Ok) => continue,
             Ok(CbStatus::Stop) => break,
-            Err(errno) => panic!("mnl_cb_run: {}", errno),
+            Err(errno) => return Err(format!("mnl_cb_run: {}", errno)),
         }
     }
+
+    Ok(())
 }
