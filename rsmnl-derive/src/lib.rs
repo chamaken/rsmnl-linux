@@ -182,7 +182,7 @@ fn parse_var_attr(
 // 2: getter fn name
 // 1: Id  	- struct name or type
 //    Str	- "str"
-//    NulStr	- "strz"
+//    CStr	- "cstr"
 //    Bytes	- "bytes"
 //    Array	- "["
 //    Path      - mod::struct
@@ -195,7 +195,7 @@ fn parse_type_attr(
     enum SigType {
         Id(Ident),
         Str,
-        NulStr,
+        CStr,
         Bytes,
         Array(TypeArray),
         Path(TypePath),
@@ -206,7 +206,7 @@ fn parse_type_attr(
             match self {
                 Self::Id(i) => i.to_tokens(tokens),
                 Self::Str => "str".to_tokens(tokens),
-                Self::NulStr => "strz".to_tokens(tokens),
+                Self::CStr => "cstr".to_tokens(tokens),
                 Self::Bytes => "bytes".to_tokens(tokens),
                 Self::Flag => "flag".to_tokens(tokens),
                 Self::Array(a) => a.to_tokens(tokens),
@@ -226,7 +226,7 @@ fn parse_type_attr(
             match input.parse::<Ident>()? {
                 s if s == "bytes" => Ok(Self::Bytes),
                 s if s == "str" => Ok(Self::Str),
-                s if s == "nulstr" => Ok(Self::NulStr),
+                s if s == "cstr" => Ok(Self::CStr),
                 s if s == "flag" => Ok(Self::Flag),
                 s @ _ => Ok(Self::Id(s)),
             }
@@ -259,7 +259,7 @@ fn parse_type_attr(
             quote! {
                 pub fn #name(&self) -> Result<Option<&str>> {
                     if let Some(attr) = self[#ei::#vi] {
-                        Ok(Some(attr.str_ref()?))
+                        Ok(Some(attr.str()?))
                     } else {
                         Ok(None)
                     }
@@ -271,11 +271,11 @@ fn parse_type_attr(
                 }
             },
         ))),
-        SigType::NulStr => Ok(Some((
+        SigType::CStr => Ok(Some((
             quote! {
                 pub fn #name(&self) -> Result<Option<&str>> {
                     if let Some(attr) = self[#ei::#vi] {
-                        Ok(Some(attr.strz_ref()?))
+                        Ok(Some(attr.cstr()?))
                     } else {
                         Ok(None)
                     }
@@ -283,7 +283,7 @@ fn parse_type_attr(
             },
             quote! {
                 pub fn #putfn<'a>(nlv: &'a mut MsgVec, data: &str) -> Result<&'a mut MsgVec> {
-                    nlv.put_strz(#ei::#vi, data)
+                    nlv.put_cstr(#ei::#vi, data)
                 }
             },
         ))),

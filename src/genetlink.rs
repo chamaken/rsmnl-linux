@@ -76,7 +76,7 @@ pub enum CtrlAttr {
     FamilyId,
 
     // #[nla_type(nulstr, family_name)]
-    #[nla_type(nulstr, family_name)]
+    #[nla_type(cstr, family_name)]
     FamilyName,
 
     #[nla_type(u32, version)]
@@ -121,7 +121,7 @@ pub enum CtrlAttrMcastGrp {
     // CTRL_ATTR_MCAST_GRP_
     Unspec,
 
-    #[nla_type(nulstr, name)]
+    #[nla_type(cstr, name)]
     #[nla_type(bytes, name_bytes)]
     Name,
 

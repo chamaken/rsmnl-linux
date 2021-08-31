@@ -379,7 +379,7 @@ pub enum CtattrExpect {
     #[nla_nest(CtattrExpectNatTbl, nat)]
     Nat,
 
-    #[nla_type(nulstr, expfn)]
+    #[nla_type(cstr, expfn)]
     Fn,
 
     _MAX,
