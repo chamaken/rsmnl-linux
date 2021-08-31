@@ -7,8 +7,8 @@ authors = ["chamas <chamas@h4.dion.ne.jp>"]
 proc_macro = true
 
 [dependencies]
-proc-macro2 = "*"
-quote = "*"
-syn = { version = "*", features = ["full", "extra-traits"] }
+proc-macro2 = "1.0.29"
+quote = "1.0.9"
+syn = { version = "1.0.75", features = ["full", "extra-traits"] }
 errno = "0.2.7"
 

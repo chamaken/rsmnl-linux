@@ -1,12 +1,14 @@
-purpose
--------
+rsmnl-linux
+===========
 
-I just wanted to write libmnl, rsmnl-core examples shorter, more compact,
-and to try using Rust procedual macro.
+I just want to write [rsmnl](https://crates.io/crates/rsmnl)-core examples
+shorter and more compact, and to try using Rust procedual macro.
 
 
 what is, by example
--------------------
+===================
+
+see examples/netfilter/nfct-daemon.rs and src/netfilter/nfnetlink_conntrack.rs.
 
 define:
 
@@ -22,7 +24,7 @@ define:
         _MAX
     }
 
-will implements std::convert::TryFrom<u16> for Parent.
+will implements std::convert::TryFrom<u16> and a few for Parent.
 
 
 simple type
@@ -49,3 +51,30 @@ Then, value can be accessed via:
     let one: Option<u32> = tb.one()?;
     let attr: Option<&Attr> = tb[Parent::One]?;
 
+
+nested type
+-----------
+
+Two is nested which is defined:
+
+    #[repr(u16)]
+    #[derive(..., NlaType)
+    #[tbname="ChildTbl"]
+    pub enum Child {
+        None = 0,
+        [#nla_type(str, one)]
+        Ichi,
+        Ni,
+        San,
+        _MAX
+    }
+
+In enum Parent, define:
+
+    [#nla_nest(ChildTbl, two)]
+    Two,
+
+Then Two can be acquire and access:
+
+    let two = tb.two()?;
+    let ichi = two.ichi()?;

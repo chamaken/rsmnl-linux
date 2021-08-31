@@ -1,12 +1,12 @@
 [package]
 name = "rsmnl-linux"
-version = "0.2.1"
+version = "0.1.0"
 authors = ["Ken-ichirou MATSUZAWA <chamas@h4.dion.ne.jp>"]
 repository = "https://github.com/chamaken/rsmnl-linux"
 keywords = ["netlink", "netfilter"]
 license-file = "COPYING"
 readme = "README.md"
-description = "linux headers for rsmnl"
+description = "macro and linux headers for rsmnl"
 
 autoexamples = false
 
@@ -14,16 +14,13 @@ autoexamples = false
 crate-type = ["rlib"]
 
 [dependencies]
-libc = "*"
-errno = "*"
-rsmnl = { path = "../rsmnl-core" }
-rsmnl-linux-derive = { path = "rsmnl-derive" }
+libc = "0.2.101"
+errno = "0.2.7"
+rsmnl = "0.1.0"
+rsmnl-linux-derive = { path = "rsmnl-derive", version = "0.1.0" }
 
 [dev-dependencies] # for examples
-mio = "*"
-
-[dependencies.mio]
-features = ["os-poll", "os-util", "udp"]
+mio = { version = "0.7.13", features = ["os-poll", "os-util", "udp"] }
 
 [[example]]
 name = "genl-family-get"
