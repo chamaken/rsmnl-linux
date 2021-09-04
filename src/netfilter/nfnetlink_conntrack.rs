@@ -62,7 +62,9 @@ pub enum CtattrType {
     #[nla_nest(CtattrProtoinfoTbl, protoinfo)]
     Protoinfo,
 
+    #[nla_nest(CtattrHelpTbl, help)]
     Help,
+
     NatSrc,
 
     #[nla_type(u32, timeout)] // big endian
@@ -77,17 +79,30 @@ pub enum CtattrType {
     #[nla_nest(CtattrCountersTbl, counters_reply)]
     CountersReply,
 
+    #[nla_type(u32, use_count)]
     Use,
+
+    #[nla_type(u32, id)]
     Id,
+
     NatDst,
+
+    #[nla_nest(CtattrTupleTbl, tuple_master)]
     TupleMaster,
+
+    #[nla_nest(CtattrSeqadjTbl, seq_adj_orig)]
     SeqAdjOrig,
+
+    #[nla_nest(CtattrSeqadjTbl, seq_adj_reply)]
     SeqAdjReply,
 
     #[nla_type(u32, secmark)]
     Secmark, // obsolete
 
+    #[nla_type(u16, zone)]
     Zone,
+
+    #[nla_nest(CtattrSecctxTbl, secctx)]
     Secctx,
 
     #[nla_nest(CtattrTstampTbl, timestamp)]
@@ -96,9 +111,15 @@ pub enum CtattrType {
     #[nla_type(u32, mark_mask)]
     MarkMask,
 
+    #[nla_type(bytes, labels)]
     Labels,
+
+    #[nla_type(bytes, labels_mask)]
     LabelsMask,
+
+    #[nla_nest(CtattrSynproxyTbl, synproxy)]
     Synproxy,
+
     Filter,
     _MAX,
 }
@@ -116,7 +137,9 @@ pub enum CtattrTuple {
     #[nla_nest(CtattrL4ProtoTbl, proto)]
     Proto,
 
+    #[nla_type(u16, zone)]
     Zone,
+
     _MAX,
 }
 
@@ -226,9 +249,16 @@ pub enum CtattrProtoinfoTcp {
 pub enum CtattrProtoinfoDccp {
     // CTA_PROTOINFO_DCCP_
     Unspec = 0,
+
+    #[nla_type(u8, state)]
     State,
+
+    #[nla_type(u8, role)]
     Role,
+
+    #[nla_type(u64, handshake_seq)]
     HandshakeSeq,
+
     Pad,
     _MAX,
 }
@@ -239,9 +269,16 @@ pub enum CtattrProtoinfoDccp {
 pub enum CtattrProtoinfoSctp {
     // CTA_PROTOINFO_SCTP_
     Unspec = 0,
+
+    #[nla_type(u8, state)]
     State,
+
+    #[nla_type(u32, vtag_original)]
     VtagOriginal,
+
+    #[nla_type(u32, vtag_reply)]
     VtagReply,
+
     _MAX,
 }
 
@@ -287,11 +324,22 @@ pub enum CtattrTstamp {
 pub enum CtattrNat {
     // CTA_NAT_
     Unspec = 0,
+
+    #[nla_type(Ipv4Addr, v4_minip)]
     V4Minip,
+
+    #[nla_type(Ipv4Addr, v4_maxip)]
     V4Maxip,
+
+    #[nla_nest(CtattrProtonatTbl, proto)]
     Proto,
+
+    #[nla_type(Ipv6Addr, v6_minip)]
     V6Minip,
+
+    #[nla_type(Ipv6Addr, v6_maxip)]
     V6Maxip,
+
     _MAX,
 }
 
@@ -301,8 +349,13 @@ pub enum CtattrNat {
 pub enum CtattrProtonat {
     // CTA_PROTONAT_
     Unspec = 0,
+
+    #[nla_type(u16, port_min)]
     PortMin = 1,
+
+    #[nla_type(u16, port_max)]
     PortMax = 2,
+
     _MAX = 3,
 }
 
@@ -312,9 +365,16 @@ pub enum CtattrProtonat {
 pub enum CtattrSeqadj {
     // CTA_SEQADJ_
     Unspec = 0,
+
+    #[nla_type(u32, correction_pos)]
     CorrectionPos,
+
+    #[nla_type(u32, offset_before)]
     OffsetBefore,
+
+    #[nla_type(u32, offset_after)]
     OffsetAfter,
+
     _MAX,
 }
 
@@ -336,9 +396,16 @@ pub enum CtattrNatseq {
 pub enum CtattrSynproxy {
     // CTA_SYNPROXY_
     Unspec = 0,
+
+    #[nla_type(u32, isn)]
     Isn,
+
+    #[nla_type(u32, its)]
     Its,
+
+    #[nla_type(u32, tsoff)]
     Tsoff,
+
     _MAX,
 }
 
@@ -391,8 +458,13 @@ pub enum CtattrExpect {
 pub enum CtattrExpectNat {
     // CTA_EXPECT_NAT_
     Unspec = 0,
+
+    #[nla_type(u32, dir)]
     Dir,
+
+    #[nla_nest(CtattrTupleTbl, tuple)]
     Tuple,
+
     _MAX,
 }
 
@@ -402,8 +474,13 @@ pub enum CtattrExpectNat {
 pub enum CtattrHelp {
     // CTA_HELP_
     Unspec = 0,
+
+    #[nla_type(str, name)]
     Name,
+
+    #[nla_type(bytes, info)]
     Info,
+
     _MAX,
 }
 
@@ -413,7 +490,10 @@ pub enum CtattrHelp {
 pub enum CtattrSecctx {
     // CTA_SECCTX_
     Unspec = 0,
+
+    #[nla_type(str, name)]
     Name,
+
     _MAX,
 }
 
@@ -424,18 +504,40 @@ pub enum CtattrStatsCpu {
     // CTA_STATS_
     Unspec,
     Searched, // no longer used
+
+    #[nla_type(u32, found)]
     Found,
+
     New, // no longer used
+
+    #[nla_type(u32, invalid)]
     Invalid,
+
     Ignore,
     Delete,     // no longer used
     DeleteList, // no longer used
+
+    #[nla_type(u32, insert)]
     Insert,
+
+    #[nla_type(u32, insert_failed)]
     InsertFailed,
+
+    #[nla_type(u32, drop)]
     Drop,
+
+    #[nla_type(u32, early_drop)]
     EarlyDrop,
+
+    #[nla_type(u32, stats_error)]
     StatsError, // note: `#[deny(ambiguous_associated_items)]` on by default
+
+    #[nla_type(u32, search_restart)]
     SearchRestart,
+
+    #[nla_type(u32, clash_resolve)]
+    CrashResolve,
+
     _MAX,
 }
 
@@ -445,8 +547,13 @@ pub enum CtattrStatsCpu {
 pub enum CtattrStatsGlobal {
     // CTA_STATS_GLOBAL_
     Unspec = 0,
+
+    #[nla_type(u32, entries)]
     Entries,
+
+    #[nla_type(u32, max_entries)]
     MaxEntries,
+
     _MAX,
 }
 
@@ -456,9 +563,16 @@ pub enum CtattrStatsGlobal {
 pub enum CtattrExpectStats {
     // CTA_STATS_EXP_
     Unspec = 0,
+
+    #[nla_type(u32, new)]
     New,
+
+    #[nla_type(u32, create)]
     Create,
+
+    #[nla_type(u32, delete)]
     Delete,
+
     _MAX,
 }
 
@@ -468,8 +582,13 @@ pub enum CtattrExpectStats {
 pub enum CtattrFilter {
     // CTA_FILTER_
     Unspec = 0,
+
+    #[nla_type(u32, orig_flags)]
     OrigFlags,
+
+    #[nla_type(u32, reply_flags)]
     ReplyFlags,
+
     _MAX,
 }
 
