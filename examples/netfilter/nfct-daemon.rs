@@ -146,6 +146,8 @@ fn main() -> Result<(), String> {
     //    receiver buffer so often.
     let _ = nl.set_broadcast_error(true);
     let _ = nl.set_no_enobufs(true);
+    // set nonblock for mio
+    let _ = nl.set_nonblock();
 
     let mut nlv = MsgVec::new();
     let mut nlh = nlv.put_header();
