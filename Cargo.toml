@@ -81,3 +81,7 @@ path = "examples/netfilter/nfct-dump.rs"
 [[example]]
 name = "nfct-event"
 path = "examples/netfilter/nfct-event.rs"
+
+[[example]]
+name = "nfct-stats"
+path = "examples/netfilter/nfct-stats.rs"
