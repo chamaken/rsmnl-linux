@@ -126,7 +126,7 @@ pub enum Ifla {
     #[nla_type(u32, link)]
     Link,
 
-    #[nla_type(str, qdisc)]
+    #[nla_type(cstr, qdisc)]
     Qdisc,
 
     #[nla_type(RtnlLinkStats, stats)]

@@ -89,7 +89,7 @@ pub enum NfulnlAttrType {
     #[nla_type(bytes, payload)]
     Payload, // opaque data payload
 
-    #[nla_type(str, prefix)]
+    #[nla_type(cstr, prefix)]
     Prefix, // string prefix
 
     #[nla_type(u32, uid)]

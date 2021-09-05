@@ -431,7 +431,7 @@ pub enum CtattrExpect {
     #[nla_type(u32, id)]
     Id,
 
-    #[nla_type(str, help_name)]
+    #[nla_type(cstr, help_name)]
     HelpName,
 
     #[nla_type(u16, zone)]
@@ -475,7 +475,7 @@ pub enum CtattrHelp {
     // CTA_HELP_
     Unspec = 0,
 
-    #[nla_type(str, name)]
+    #[nla_type(cstr, name)]
     Name,
 
     #[nla_type(bytes, info)]
@@ -491,7 +491,7 @@ pub enum CtattrSecctx {
     // CTA_SECCTX_
     Unspec = 0,
 
-    #[nla_type(str, name)]
+    #[nla_type(cstr, name)]
     Name,
 
     _MAX,

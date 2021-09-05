@@ -520,7 +520,7 @@ pub enum Rtax {
     #[nla_type(u32, quickack)]
     Quickack,
 
-    #[nla_type(str, cc_algo)]
+    #[nla_type(cstr, cc_algo)]
     CcAlgo,
 
     #[nla_type(u32, fastopen_no_cookie)]
