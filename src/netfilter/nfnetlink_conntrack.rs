@@ -513,7 +513,7 @@ pub enum CtattrStatsCpu {
     #[nla_type(u32, invalid)]
     Invalid,
 
-    Ignore,
+    Ignore,     // no longer used
     Delete,     // no longer used
     DeleteList, // no longer used
 

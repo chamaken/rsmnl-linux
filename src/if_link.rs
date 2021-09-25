@@ -460,6 +460,12 @@ pub enum Brport {
     #[nla_type(u8, mrp_in_open)]
     MrpInOpen,
 
+    #[nla_type(u32, mcast_eht_hosts_limit)]
+    McastEhtHostsLimit,
+
+    #[nla_type(u32, mcast_eht_hosts_cnt)]
+    McastEhtHostsCnt,
+
     _MAX,
 }
 
@@ -532,12 +538,32 @@ pub struct IflaVlanQosMapping {
 pub enum Macvlan {
     // IFLA_MACVLAN_
     Unspec = 0,
+
+    #[nla_type(u32, mode)]
     Mode,
+
+    #[nla_type(u16, flags)]
     Flags,
+
+    #[nla_type(u32, macaddr_mode)]
     MacaddrMode,
+
+    #[nla_type(bytes, macaddr)]
     Macaddr,
+
+    // XXX: bytes array?
+    #[nla_nest([MacvlanTbl], macaddr_data)]
     MacaddrData,
+
+    #[nla_type(u32, macaddr_count)]
     MacaddrCount,
+
+    #[nla_type(u32, bc_queue_len)]
+    BcQueueLen,
+
+    #[nla_type(u32, bc_queue_len_used)]
+    BcQueueLenUsed,
+
     _MAX,
 }
 

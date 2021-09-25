@@ -96,6 +96,13 @@ pub enum CtrlAttr {
 
     #[nla_nest(netlink::NetlinkPolicyTypeAttrTbl, policy)]
     Policy,
+
+    #[nla_nest(CtrlAttrPolicyTbl, op_policy)]
+    OpPolicy,
+
+    #[nla_type(u32, op)]
+    Op,
+
     _MAX,
 }
 
@@ -127,5 +134,21 @@ pub enum CtrlAttrMcastGrp {
 
     #[nla_type(u32, id)]
     Id,
+
+    _MAX,
+}
+
+#[repr(u16)]
+#[derive(Debug, Clone, Copy, PartialEq, Eq, Hash, NlaType)]
+#[tbname = "CtrlAttrPolicyTbl"]
+pub enum CtrlAttrPolicy {
+    Unspec,
+
+    #[nla_type(u32, policy_do)]
+    PolicyDo,
+
+    #[nla_type(u32, policy_dump)]
+    PolicyDump,
+
     _MAX,
 }

@@ -304,6 +304,12 @@ pub const RTM_F_EQUALIZE: u32 = 0x400; // Multipath equalizer: NI
 pub const RTM_F_PREFIX: u32 = 0x800; // Prefix addresses
 pub const RTM_F_LOOKUP_TABLE: u32 = 0x1000; // set rtm_table to FIB lookup result
 pub const RTM_F_FIB_MATCH: u32 = 0x2000; // return full fib lookup match
+pub const RTM_F_OFFLOAD: u32 = 0x4000; // is offloaded
+pub const RTM_F_TRAP: u32 = 0x8000; // is trapping packets
+pub const RTM_F_OFFLOAD_FAILED: u32 = 0x20000000; // route offload failed, this value
+                                                  // is chosen to avoid conflicts with
+                                                  // other flags defined in
+                                                  // include/uapi/linux/ipv6_route.h
 
 #[repr(u32)]
 #[derive(Debug, Clone, Copy, PartialEq, Eq, Hash)]
@@ -418,11 +424,12 @@ pub struct Rtnexthop {
 pub const RTNH_F_DEAD: u8 = 1; // Nexthop is dead (used by multipath)
 pub const RTNH_F_PERVASIVE: u8 = 2; // Do recursive gateway lookup
 pub const RTNH_F_ONLINK: u8 = 4; // Gateway is forced on link
-pub const RTNH_F_OFFLOAD: u8 = 8; // offloaded route
+pub const RTNH_F_OFFLOAD: u8 = 8; // Nexthop is offloaded
 pub const RTNH_F_LINKDOWN: u8 = 16; // carrier-down on nexthop
 pub const RTNH_F_UNRESOLVED: u8 = 32; // The entry is unresolved (ipmr)
+pub const RTNH_F_TRAP: u8 = 64; // Nexthop is trapping packets
 
-pub const RTNH_COMPARE_MASK: u8 = RTNH_F_DEAD | RTNH_F_LINKDOWN | RTNH_F_OFFLOAD;
+pub const RTNH_COMPARE_MASK: u8 = RTNH_F_DEAD | RTNH_F_LINKDOWN | RTNH_F_OFFLOAD | RTNH_F_TRAP;
 
 // Macros to handle hexthops
 pub const RTNH_ALIGNTO: u16 = 4;
@@ -862,15 +869,24 @@ pub fn ta_payload(n: &netlink::Nlmsghdr) -> u32 {
 
 // tcamsg flags stored in attribute TCA_ROOT_FLAGS
 //
-// TCA_FLAG_LARGE_DUMP_ON user->kernel to request for larger than TCA_ACT_MAX_PRIO
-// actions in a dump. All dump responses will contain the number of actions
-// being dumped stored in for user app's consumption in TCA_ROOT_COUNT
+// TCA_ACT_FLAG_LARGE_DUMP_ON user->kernel to request for larger than
+// TCA_ACT_MAX_PRIO actions in a dump. All dump responses will contain the
+// number of actions being dumped stored in for user app's consumption in
+// TCA_ROOT_COUNT
+//
+// TCA_ACT_FLAG_TERSE_DUMP user->kernel to request terse (brief) dump that only
+// includes essential action info (kind, index, etc.)
 pub const TCA_FLAG_LARGE_DUMP_ON: u32 = 1 << 0;
+pub const TCA_ACT_FLAG_LARGE_DUMP_ON: u32 = TCA_FLAG_LARGE_DUMP_ON;
+pub const TCA_ACT_FLAG_TERSE_DUMP: u32 = 1 << 1;
 
 // New extended info filters for IFLA_EXT_MASK
 pub const RTEXT_FILTER_VF: u32 = 1 << 0;
 pub const RTEXT_FILTER_BRVLAN: u32 = 1 << 1;
 pub const RTEXT_FILTER_BRVLAN_COMPRESSED: u32 = 1 << 2;
 pub const RTEXT_FILTER_SKIP_STATS: u32 = 1 << 3;
+pub const RTEXT_FILTER_MRP: u32 = 1 << 4;
+pub const RTEXT_FILTER_CFM_CONFIG: u32 = 1 << 5;
+pub const RTEXT_FILTER_CFM_STATUS: u32 = 1 << 6;
 
 // End of information exported to user level

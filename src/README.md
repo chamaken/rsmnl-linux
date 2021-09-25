@@ -1,7 +1,7 @@
 kernel version
 --------------
 
-5.10
+5.12
 
 
 struct, enum naming

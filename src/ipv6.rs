@@ -161,5 +161,8 @@ pub enum Devconf {
     #[nla_type(i32, rpl_seg_enabled)]
     RplSegEnabled,
 
+    #[nla_type(u32, ra_defrtr_metric)]
+    RaDefrtrMetric,
+
     _MAX,
 }

@@ -201,6 +201,7 @@ pub struct Nlmsgerr {
 // @NLMSGERR_ATTR_COOKIE: arbitrary subsystem specific cookie to
 //     be used - in the success case - to identify a created
 //     object or operation or similar (binary)
+// @NLMSGERR_ATTR_POLICY: policy for a rejected attribute
 // @__NLMSGERR_ATTR_MAX: number of attributes
 // @NLMSGERR_ATTR_MAX: highest attribute number
 #[repr(u16)]
@@ -210,7 +211,8 @@ pub enum NlmsgerrAttrs {
     Msg = 1,
     Offs = 2,
     Cookie = 3,
-    _MAX = 4,
+    Policy = 4,
+    _MAX = 5,
 }
 
 pub const NETLINK_ADD_MEMBERSHIP: c_int = 1;
@@ -379,6 +381,7 @@ pub const NL_ATTR_TYPE_BITFIELD32: u32 = NetlinkAttrType::Bitfield32 as u32;
 //      the index, if limited inside the nesting (U32)
 // @NL_POLICY_TYPE_ATTR_BITFIELD32_MASK: valid mask for the
 //      bitfield32 type (U32)
+// @NL_POLICY_TYPE_ATTR_MASK: mask of valid bits for unsigned integers (U64)
 // @NL_POLICY_TYPE_ATTR_PAD: pad attribute for 64-bit alignment
 #[repr(u16)]
 #[derive(Debug, Clone, Copy, PartialEq, Eq, Hash, NlaType)]
@@ -418,6 +421,9 @@ pub enum NetlinkPolicyTypeAttr {
     Bitfield32Mask,
 
     Pad,
+
+    #[nla_type(u64, mask)]
+    Mask,
 
     // keep last
     _MAX,
