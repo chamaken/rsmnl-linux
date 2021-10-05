@@ -213,10 +213,14 @@ impl Set {
     pub fn from_nlmsg(nlh: &Msghdr) -> Result<Option<(Self, BitVec)>, Errno> {
         let tb = CtattrTypeTbl::from_nlmsg(mem::size_of::<Nfgenmsg>(), nlh)?;
 
-        // check whether counters is zero first
+        // check whether counters is zero and no stop timestamp first
+        let ts_tb = TbRes(tb.timestamp()).e4();
         let orig_cnt_tb = TbRes(tb.counters_orig()).e3();
         let repl_cnt_tb = TbRes(tb.counters_reply()).e3();
-        if *TbRes(orig_cnt_tb.packets()).e3() == 0 && *TbRes(repl_cnt_tb.packets()).e3() == 0 {
+        if *TbRes(orig_cnt_tb.packets()).e3() == 0
+            && *TbRes(repl_cnt_tb.packets()).e3() == 0
+            && TbRes(ts_tb.stop()).e1().is_none()
+        {
             return Ok(None);
         }
 
@@ -340,7 +344,6 @@ impl Set {
         sr.put_data(&id);
         bv.set(NfConntrackAttr::Id as usize, true);
 
-        let ts_tb = TbRes(tb.timestamp()).e4();
         if let Some(start) = TbRes(ts_tb.start()).e1() {
             sr.put_data(&to_ntp(*start));
             bv.set(NfConntrackAttr::TimestampStart as usize, true);
